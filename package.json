@@ -1,0 +1,171 @@
+{
+  "activationEvents": [
+    "onLanguage:python",
+    "onLanguage:toml",
+    "workspaceContains:*.py",
+    "workspaceContains:requirements.txt",
+    "workspaceContains:pyproject.toml"
+  ],
+  "bugs": {
+    "url": "https://github.com/benbenbang/tombo/issues"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "category": "Tombo",
+        "command": "tombo.updateDependencies",
+        "title": "Update All Dependencies"
+      },
+      {
+        "category": "Tombo",
+        "command": "tombo.refreshPackages",
+        "title": "Refresh Package Versions"
+      }
+    ],
+    "configuration": {
+      "properties": {
+        "tombo.compatibleDecorator": {
+          "default": " \u2713",
+          "description": "Decorator text for compatible versions",
+          "type": "string"
+        },
+        "tombo.compatibleDecoratorCss": {
+          "default": {
+            "after": {
+              "color": "#73c991"
+            }
+          },
+          "description": "CSS styling for compatible version decorators",
+          "type": "object"
+        },
+        "tombo.errorDecorator": {
+          "default": " \u26a0\ufe0f",
+          "description": "Decorator text for errors",
+          "type": "string"
+        },
+        "tombo.errorDecoratorCss": {
+          "default": {
+            "after": {
+              "color": "#ff0000"
+            }
+          },
+          "description": "CSS styling for error decorators",
+          "type": "object"
+        },
+        "tombo.incompatibleDecorator": {
+          "default": " \u26a0",
+          "description": "Decorator text for incompatible versions",
+          "type": "string"
+        },
+        "tombo.incompatibleDecoratorCss": {
+          "default": {
+            "after": {
+              "color": "#ff7b00"
+            }
+          },
+          "description": "CSS styling for incompatible version decorators",
+          "type": "object"
+        },
+        "tombo.listPreReleases": {
+          "default": false,
+          "description": "Show pre-release versions in the completion list",
+          "type": "boolean"
+        },
+        "tombo.pypiIndexUrl": {
+          "default": "https://pypi.org/pypi/",
+          "description": "URL of the PyPI index server to use for package information",
+          "type": "string"
+        },
+        "tombo.showNotifications": {
+          "default": "onError",
+          "description": "Controls when notifications are shown by this extension.",
+          "enum": [
+            "off",
+            "onError",
+            "onWarning",
+            "always"
+          ],
+          "enumDescriptions": [
+            "All notifications are turned off, any errors or warning are still available in the logs.",
+            "Notifications are shown only in the case of an error.",
+            "Notifications are shown for errors and warnings.",
+            "Notifications are show for anything that the server chooses to show."
+          ],
+          "scope": "machine",
+          "type": "string"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "fs-extra": "^11.1.0",
+    "node-cache": "^5.1.2",
+    "vscode-languageclient": "^8.1.0"
+  },
+  "description": "Python package version management for pyproject.toml and requirements.txt files",
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.1",
+    "@types/glob": "^8.1.0",
+    "@types/node": "14.x",
+    "@types/vscode": "1.75.0",
+    "@typescript-eslint/eslint-plugin": "^5.54.0",
+    "@typescript-eslint/parser": "^5.54.0",
+    "@vscode/test-electron": "^2.3.0",
+    "@vscode/vsce": "^2.15.0",
+    "eslint": "^8.35.0",
+    "glob": "^9.1.0",
+    "prettier": "^2.8.4",
+    "ts-loader": "^9.4.2",
+    "typescript": "^4.9.5",
+    "webpack": "^5.76.0",
+    "webpack-cli": "^5.0.1"
+  },
+  "displayName": "Tombo - Python Package Manager",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "extensionDependencies": [
+    "ms-python.python"
+  ],
+  "galleryBanner": {
+    "color": "#1e415e",
+    "theme": "dark"
+  },
+  "homepage": "https://github.com/benbenbang/tombo",
+  "keywords": [
+    "python",
+    "pypi",
+    "requirements",
+    "pyproject",
+    "toml",
+    "dependencies"
+  ],
+  "license": "MIT",
+  "main": "./dist/extension.js",
+  "name": "tombo",
+  "preview": true,
+  "publisher": "benbenbang",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/benbenbang/tombo.git"
+  },
+  "scripts": {
+    "compile": "webpack",
+    "compile-tests": "tsc -p . --outDir out",
+    "format-check": "prettier --check 'src/**/*.ts' 'build/**/*.yml' '.github/**/*.yml'",
+    "lint": "eslint src --ext ts",
+    "package": "webpack --mode production --devtool source-map --config ./webpack.config.js",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "test": "node ./out/test/runTest.js",
+    "vsce-package": "vsce package -o tombo.vsix",
+    "vscode:prepublish": "npm run package",
+    "watch": "webpack --watch",
+    "watch-tests": "tsc -p . -w --outDir out"
+  },
+  "version": "0.1.0"
+}

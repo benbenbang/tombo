@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "tombo"
+version = "0.1.0"
+description = "vscode extension for python package prompt in pyproject.toml"
+authors = ["benbenbang <bn@bitbrew.dev>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+attrs = "22.2.0"
+cattrs = "22.2.0"
+exceptiongroup = "1.1.1"
+lsprotocol = "2023.0.0a1"
+packaging = "23.0"
+pygls = "1.0.1"
+typing-extensions = "4.5.0"
+typeguard = "2.13.3"
+
+[tool.poetry.group.dev.dependencies]
+ipython = "^8.32.0"
+pylint = "^2.17.2"
+pre-commit = "^3.2.2"
+pip-tools = "^6.13.0"
+httpx = "^0.28.1"
+textual = "2.1.2"
+pandas = "?"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

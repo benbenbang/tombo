@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "ES2020"
+    ],
+    "module": "commonjs",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedParameters": true,
+    "rootDir": "src",
+    "sourceMap": true,
+    "strict": true,
+    "target": "ES2020"
+  }
+}
