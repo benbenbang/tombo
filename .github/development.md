@@ -8,7 +8,7 @@ The extension template has two parts, the extension part and language server par
 
 For the most part you will be working on the python part of the code when using this template. You will be integrating your tool with the extension part using the [Language Server Protocol](https://microsoft.github.io/language-server-protocol). [_pygls_][pygls] currently works on the [version 3.16 of LSP](https://microsoft.github.io/language-server-protocol/specifications/specification-3-16/).
 
-The TypeScript part handles working with VS Code and its UI. The extension template comes with few settings pre configured that can be used by your tool. If you need to add new settings to support your tool, you will have to work with a bit of TypeScript. The extension has examples for few settings that you can follow. You can also look at extensions developed by our team for some of the popular tools as reference.
+The TypeScript part handles working with VS Code and its UI. The extension template comes with few settings pre configured that can be used by your tool. If you need to add new settings to support your tool, you will have to work with a bit of TypeScript. The extension has examples for few settings that you can follow. You can also look at extensions developed by the team for some of the popular tools as reference.
 
 ## Requirements
 
@@ -62,7 +62,7 @@ Also look for `TODO` in other locations in the entire template:
 - `src/test/python_tests/test_server.py` : This is where you will write tests. There are two incomplete examples provided there to get you started.
 - All the markdown files in this template have some `TODO` items, be sure to check them out as well. That includes updating the LICENSE file, even if you want to keep it MIT License.
 
-References, to other extension created by our team using the template:
+References, to other extension created by the team using the template:
 
 - Protocol reference: <https://microsoft.github.io/language-server-protocol/specifications/specification-3-16/>
 - Implementation showing how to handle Linting on file `open`, `save`, and `close`. [Pylint](https://github.com/microsoft/vscode-pylint/tree/main/bundled/tool)

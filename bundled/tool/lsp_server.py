@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 """Implementation of tool support over LSP."""
+
 from __future__ import annotations
 
 # standard library
@@ -49,7 +50,9 @@ RUNNER = pathlib.Path(__file__).parent / "lsp_runner.py"
 
 MAX_WORKERS = 5
 # TODO: Update the language server name and version.
-LSP_SERVER = server.LanguageServer(name="<pytool-display-name>", version="<server version>", max_workers=MAX_WORKERS)
+LSP_SERVER = server.LanguageServer(
+    name="<pytool-display-name>", version="<server version>", max_workers=MAX_WORKERS
+)
 
 
 # **********************************************************
@@ -170,7 +173,7 @@ def _parse_output_using_regex(content: str) -> list[lsp.Diagnostic]:
 
 # TODO: if you want to handle setting specific severity for your linter
 # in a user configurable way, then look at look at how it is implemented
-# for `pylint` extension from our team.
+# for `pylint` extension from the team.
 # Pylint: https://github.com/microsoft/vscode-pylint
 # Follow the flow of severity from the settings in package.json to the server.
 def _get_severity(*_codes: list[str]) -> lsp.DiagnosticSeverity:
@@ -269,8 +272,12 @@ def initialize(params: lsp.InitializeParams) -> None:
 
     settings = params.initialization_options["settings"]
     _update_workspace_settings(settings)
-    log_to_output(f"Settings used to run Server:\r\n{json.dumps(settings, indent=4, ensure_ascii=False)}\r\n")
-    log_to_output(f"Global settings:\r\n{json.dumps(GLOBAL_SETTINGS, indent=4, ensure_ascii=False)}\r\n")
+    log_to_output(
+        f"Settings used to run Server:\r\n{json.dumps(settings, indent=4, ensure_ascii=False)}\r\n"
+    )
+    log_to_output(
+        f"Global settings:\r\n{json.dumps(GLOBAL_SETTINGS, indent=4, ensure_ascii=False)}\r\n"
+    )
 
 
 @LSP_SERVER.feature(lsp.EXIT)
@@ -394,7 +401,9 @@ def _run_tool_on_document(
         # 'path' setting takes priority over everything.
         use_path = True
         argv = settings["path"]
-    elif settings["interpreter"] and not utils.is_current_interpreter(settings["interpreter"][0]):
+    elif settings["interpreter"] and not utils.is_current_interpreter(
+        settings["interpreter"][0]
+    ):
         # If there is a different interpreter set use JSON-RPC to the subprocess
         # running under that interpreter.
         argv = [TOOL_MODULE]
@@ -497,7 +506,9 @@ def _run_tool(extra_args: Sequence[str]) -> utils.RunResult:
         # 'path' setting takes priority over everything.
         use_path = True
         argv = settings["path"]
-    elif len(settings["interpreter"]) > 0 and not utils.is_current_interpreter(settings["interpreter"][0]):
+    elif len(settings["interpreter"]) > 0 and not utils.is_current_interpreter(
+        settings["interpreter"][0]
+    ):
         # If there is a different interpreter set use JSON-RPC to the subprocess
         # running under that interpreter.
         argv = [TOOL_MODULE]
@@ -547,7 +558,9 @@ def _run_tool(extra_args: Sequence[str]) -> utils.RunResult:
                 # with code for your tool. You can also use `utils.run_api` helper, which
                 # handles changing working directories, managing io streams, etc.
                 # Also update `_run_tool_on_document` function and `utils.run_module` in `lsp_runner.py`.
-                result = utils.run_module(module=TOOL_MODULE, argv=argv, use_stdin=True, cwd=cwd)
+                result = utils.run_module(
+                    module=TOOL_MODULE, argv=argv, use_stdin=True, cwd=cwd
+                )
             except Exception:
                 log_error(traceback.format_exc(chain=True))
                 raise
@@ -561,7 +574,9 @@ def _run_tool(extra_args: Sequence[str]) -> utils.RunResult:
 # *****************************************************
 # Logging and notification.
 # *****************************************************
-def log_to_output(message: str, msg_type: lsp.MessageType = lsp.MessageType.Log) -> None:
+def log_to_output(
+    message: str, msg_type: lsp.MessageType = lsp.MessageType.Log
+) -> None:
     LSP_SERVER.show_message_log(message, msg_type)
 
 
