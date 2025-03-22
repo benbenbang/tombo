@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "test-project"
+version = "0.1.0"
+description = "A test project for Tombo extension"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+requests = "?"   # Type "?" and it should auto-fill with the latest version
+numpy = ""       # Try typing = and you should see version suggestions
+
+[tool.poetry.group.dev.dependencies]
+ipython = "^8.32.0"
+pylint = "^2.17.2"
+pre-commit = "^3.2.2"
+pip-tools = "^6.13.0"
+httpx = "^0.28.1"
+textual = "2.1.2"
+pandas = "?"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
