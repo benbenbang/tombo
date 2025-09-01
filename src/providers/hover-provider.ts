@@ -262,7 +262,7 @@ export class PackageHoverProvider implements HoverProvider {
     // Recent versions section
     const recentVersions = metadata.versions.slice(0, 5);
     if (recentVersions.length > 0) {
-      content.appendMarkdown(`**Recent Versions:**\n`);
+      content.appendMarkdown('**Recent Versions:**\n');
       recentVersions.forEach((version) => {
         let versionLine = `- \`${version}\``;
 
@@ -292,7 +292,7 @@ export class PackageHoverProvider implements HoverProvider {
     if (metadata.classifiers && metadata.classifiers.length > 0) {
       const importantClassifiers = this.filterImportantClassifiers(metadata.classifiers);
       if (importantClassifiers.length > 0) {
-        content.appendMarkdown(`**Categories:**\n`);
+        content.appendMarkdown('**Categories:**\n');
         importantClassifiers.slice(0, 5).forEach(classifier => {
           content.appendMarkdown(`- ${classifier}\n`);
         });
@@ -301,7 +301,7 @@ export class PackageHoverProvider implements HoverProvider {
     }
 
     // Footer
-    content.appendMarkdown(`---\n*Tombo • Python Package Management*`);
+    content.appendMarkdown('---\n*Tombo • Python Package Management*');
 
     return content;
   }
@@ -310,7 +310,7 @@ export class PackageHoverProvider implements HoverProvider {
    * Add links section to hover content
    */
   private addLinksSection(content: MarkdownString, packageInfo: PyPIPackageInfo): void {
-    content.appendMarkdown(`**Links:**\n`);
+    content.appendMarkdown('**Links:**\n');
 
     // PyPI link
     if (packageInfo.package_url) {
@@ -341,7 +341,7 @@ export class PackageHoverProvider implements HoverProvider {
 
     // Author information
     if (packageInfo.author || packageInfo.maintainer) {
-      content.appendMarkdown(`**Maintainers:**\n`);
+      content.appendMarkdown('**Maintainers:**\n');
       if (packageInfo.author) {
         content.appendMarkdown(`- Author: ${packageInfo.author}\n`);
       }

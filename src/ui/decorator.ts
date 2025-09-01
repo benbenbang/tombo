@@ -1,7 +1,7 @@
-import { TextEditor, TextEditorDecorationType, workspace, DecorationOptions, DecorationInstanceRenderOptions } from "vscode";
-import { StatusBar } from "./status-bar";
-import Dependency from "../core/Dependency";
-import decoration, { latestVersion } from "./decoration";
+import { TextEditor, TextEditorDecorationType, workspace, DecorationOptions, DecorationInstanceRenderOptions } from 'vscode';
+import { StatusBar } from './status-bar';
+import Dependency from '../core/Dependency';
+import decoration, { latestVersion } from './decoration';
 
 export let decorationHandle: TextEditorDecorationType;
 
@@ -18,7 +18,7 @@ export default function decorate(editor: TextEditor, dependencies: Array<Depende
         if (dep && !dep.error && (dep.versions && dep.versions.length)) {
             return dep;
         } else if (!dep.error) {
-            dep.error = dep.package.key + ": " + "No versions found";
+            dep.error = dep.package.key + ': ' + 'No versions found';
         }
         errors.push(`${dep.error}`);
         return dep;
@@ -28,7 +28,7 @@ export default function decorate(editor: TextEditor, dependencies: Array<Depende
     for (let i = filtered.length - 1; i > -1; i--) {
         const dependency: Dependency = filtered[i];
         try {
-            let decor = decoration(
+            const decor = decoration(
                 editor,
                 dependency.package,
                 dependency.versions || [],
@@ -50,35 +50,35 @@ export default function decorate(editor: TextEditor, dependencies: Array<Depende
     editor.setDecorations(decorationHandle, options);
 
     if (errors.length) {
-        StatusBar.setText("Error", `Completed with errors
+        StatusBar.setText('Error', `Completed with errors
 ${errors.join('\n')}`);
     } else {
-        StatusBar.setText("Info");
+        StatusBar.setText('Info');
     }
 }
 
-import { TomboSettings } from "../core/settings";
+import { TomboSettings } from '../core/settings';
 
 function loadPref() {
     const settings = new TomboSettings();
 
-    const compatibleDecoratorText = settings.compatibleDecorator;
-    let compatibleDecoratorCss = settings.compatibleDecoratorCss;
+    const compatibleDecoratorText = settings.getCompatibleDecorator();
+    const compatibleDecoratorCss = settings.getCompatibleDecoratorCss();
 
-    const errorDecoratorText = settings.errorDecorator;
-    let errorDecoratorCss = settings.errorDecoratorCss;
+    const errorDecoratorText = settings.getErrorDecorator();
+    const errorDecoratorCss = settings.getErrorDecoratorCss();
 
-    const incompatibleDecoratorText = settings.incompatibleDecorator;
-    let incompatibleDecoratorCss = settings.incompatibleDecoratorCss;
+    const incompatibleDecoratorText = settings.getIncompatibleDecorator();
+    const incompatibleDecoratorCss = settings.getIncompatibleDecoratorCss();
 
     if (compatibleDecoratorCss.after == undefined) {
-        compatibleDecoratorCss.after = {}
+        compatibleDecoratorCss.after = {};
     }
     if (incompatibleDecoratorCss.after == undefined) {
-        incompatibleDecoratorCss.after = {}
+        incompatibleDecoratorCss.after = {};
     }
     if (errorDecoratorCss.after == undefined) {
-        errorDecoratorCss.after = {}
+        errorDecoratorCss.after = {};
     }
 
     compatibleDecoratorCss.after.contentText = compatibleDecoratorText;

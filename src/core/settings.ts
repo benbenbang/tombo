@@ -47,11 +47,11 @@ export async function getWorkspaceSettings(
     const workspaceSetting = {
         cwd: workspace.uri.fsPath,
         workspace: workspace.uri.toString(),
-        args: config.get<string[]>(`args`) ?? [],
-        path: config.get<string[]>(`path`) ?? [],
+        args: config.get<string[]>('args') ?? [],
+        path: config.get<string[]>('path') ?? [],
         interpreter: interpreter ?? [],
-        importStrategy: config.get<string>(`importStrategy`) ?? 'fromEnvironment',
-        showNotifications: config.get<string>(`showNotifications`) ?? 'off',
+        importStrategy: config.get<string>('importStrategy') ?? 'fromEnvironment',
+        showNotifications: config.get<string>('showNotifications') ?? 'off',
     };
     return workspaceSetting;
 }
@@ -114,49 +114,49 @@ export class TomboSettings {
     /**
      * Get PyPI index URL from settings or return default
      */
-    get pypiIndexUrl(): string {
+    getPypiIndexUrl(): string {
         return this.config.get<string>('pypiIndexUrl') || 'https://pypi.org/pypi/';
     }
 
     /**
      * Whether to show pre-release versions in completions
      */
-    get listPreReleases(): boolean {
+    getListPreReleases(): boolean {
         return this.config.get<boolean>('listPreReleases') || false;
     }
 
     /**
      * Get notification level setting
      */
-    get showNotifications(): 'off' | 'onError' | 'onWarning' | 'always' {
+    getShowNotifications(): 'off' | 'onError' | 'onWarning' | 'always' {
         return this.config.get<'off' | 'onError' | 'onWarning' | 'always'>('showNotifications') || 'onError';
     }
 
     /**
      * Get compatible version decorator settings
      */
-    get compatibleDecorator(): string {
+    getCompatibleDecorator(): string {
         return this.config.get<string>('compatibleDecorator') || ' ✓';
     }
 
     /**
      * Get incompatible version decorator settings
      */
-    get incompatibleDecorator(): string {
+    getIncompatibleDecorator(): string {
         return this.config.get<string>('incompatibleDecorator') || ' ⚠';
     }
 
     /**
      * Get error decorator settings
      */
-    get errorDecorator(): string {
+    getErrorDecorator(): string {
         return this.config.get<string>('errorDecorator') || ' ⚠️';
     }
 
     /**
      * Get decorator CSS settings for compatible versions
      */
-    get compatibleDecoratorCss(): any {
+    getCompatibleDecoratorCss(): any {
         return this.config.get<any>('compatibleDecoratorCss') || {
             after: {
                 color: '#73c991'
@@ -167,7 +167,7 @@ export class TomboSettings {
     /**
      * Get decorator CSS settings for incompatible versions
      */
-    get incompatibleDecoratorCss(): any {
+    getIncompatibleDecoratorCss(): any {
         return this.config.get<any>('incompatibleDecoratorCss') || {
             after: {
                 color: '#ff7b00'
@@ -178,7 +178,7 @@ export class TomboSettings {
     /**
      * Get decorator CSS settings for errors
      */
-    get errorDecoratorCss(): any {
+    getErrorDecoratorCss(): any {
         return this.config.get<any>('errorDecoratorCss') || {
             after: {
                 color: '#ff0000'
@@ -191,12 +191,12 @@ export class TomboSettings {
      */
     getDecoratorSettings() {
         return {
-            compatibleDecorator: this.compatibleDecorator,
-            incompatibleDecorator: this.incompatibleDecorator,
-            errorDecorator: this.errorDecorator,
-            compatibleDecoratorCss: this.compatibleDecoratorCss,
-            incompatibleDecoratorCss: this.incompatibleDecoratorCss,
-            errorDecoratorCss: this.errorDecoratorCss
+            compatibleDecorator: this.getCompatibleDecorator(),
+            incompatibleDecorator: this.getIncompatibleDecorator(),
+            errorDecorator: this.getErrorDecorator(),
+            compatibleDecoratorCss: this.getCompatibleDecoratorCss(),
+            incompatibleDecoratorCss: this.getIncompatibleDecoratorCss(),
+            errorDecoratorCss: this.getErrorDecoratorCss()
         };
     }
 }

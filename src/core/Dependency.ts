@@ -1,5 +1,5 @@
-import { CompletionList } from "vscode";
-import Package from "./Package";
+import { CompletionList } from 'vscode';
+import Package from './Package';
 
 /**
  * Dependency is a data structure to define parsed package index, versions and error
@@ -11,4 +11,4 @@ export default interface Dependency {
 
     versionCompletionItems?: CompletionList;
     featureCompletionItems?: Map<string, CompletionList>;
-}
+};

@@ -1,4 +1,4 @@
-var semver = /^v?(?:\d+)(\.(?:[x*]|\d+)(\.(?:[x*]|\d+)(\.(?:[x*]|\d+))?(?:-[\da-z\-]+(?:\.[\da-z\-]+)*)?(?:\+[\da-z\-]+(?:\.[\da-z\-]+)*)?)?)?$/i;
+const semver = /^v?(?:\d+)(\.(?:[x*]|\d+)(\.(?:[x*]|\d+)(\.(?:[x*]|\d+))?(?:-[\da-z\-]+(?:\.[\da-z\-]+)*)?(?:\+[\da-z\-]+(?:\.[\da-z\-]+)*)?)?)?$/i;
 
 type CompareOperator = '>' | '>=' | '=' | '<' | '<=';
 
@@ -27,15 +27,15 @@ function compareVersions(v1: string, v2: string) {
     const s2 = split(v2);
     const limit = Math.max(s1.length - 1, s2.length - 1);
     for (let i = 0; i < limit; i++) {
-        var n1 = parseInt(s1[i] || "0", 10);
-        var n2 = parseInt(s2[i] || "0", 10);
+        const n1 = parseInt(s1[i] || '0', 10);
+        const n2 = parseInt(s2[i] || '0', 10);
 
         if (n1 > n2) return 1;
         if (n2 > n1) return -1;
     }
 
-    var sp1 = s1[s1.length - 1];
-    var sp2 = s2[s2.length - 1];
+    const sp1 = s1[s1.length - 1];
+    const sp2 = s2[s2.length - 1];
 
     if (sp1 && sp2) {
         const p1 = sp1.split('.').map((str) => /^\d+$/.test(str) ? parseInt(str, 10) : str);
@@ -53,9 +53,9 @@ function compareVersions(v1: string, v2: string) {
     }
 
     return 0;
-};
+}
 
-var allowedOperators = [
+const allowedOperators = [
     '>',
     '>=',
     '=',
@@ -63,7 +63,7 @@ var allowedOperators = [
     '<='
 ];
 
-var operatorResMap = {
+const operatorResMap = {
     '>': [1],
     '>=': [0, 1],
     '=': [0],
@@ -90,7 +90,7 @@ compareVersions.compare = function (v1: string, v2: string, operator: CompareOpe
 
     // since result of compareVersions can only be -1 or 0 or 1
     // a simple map can be used to replace switch
-    var res = compareVersions(v1, v2);
+    const res = compareVersions(v1, v2);
     return operatorResMap[operator].indexOf(res) > -1;
 };
 
