@@ -85,7 +85,7 @@ export async function restartServer(
     lsClient?: LanguageClient,
 ): Promise<LanguageClient | undefined> {
     if (lsClient) {
-        traceInfo(`Server: Stop requested`);
+        traceInfo('Server: Stop requested');
         await lsClient.stop();
         _disposables.forEach((d) => d.dispose());
         _disposables = [];
@@ -97,18 +97,18 @@ export async function restartServer(
         settings: await getExtensionSettings(serverId, true),
         globalSettings: await getGlobalSettings(serverId, false),
     });
-    traceInfo(`Server: Start requested.`);
+    traceInfo('Server: Start requested.');
     _disposables.push(
         newLSClient.onDidChangeState((e) => {
             switch (e.newState) {
                 case State.Stopped:
-                    traceVerbose(`Server State: Stopped`);
+                    traceVerbose('Server State: Stopped');
                     break;
                 case State.Starting:
-                    traceVerbose(`Server State: Starting`);
+                    traceVerbose('Server State: Starting');
                     break;
                 case State.Running:
-                    traceVerbose(`Server State: Running`);
+                    traceVerbose('Server State: Running');
                     break;
             }
         }),

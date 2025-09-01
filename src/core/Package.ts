@@ -1,9 +1,9 @@
 export default class Package {
-    key: string = "";
+    key = '';
     values: Array<any> = [];
-    value: string | undefined = "";
-    start: number = -1;
-    end: number = -1;
+    value: string | undefined = '';
+    start = -1;
+    end = -1;
     constructor(pkg?: Package) {
         if (pkg) {
             this.key = pkg.key;

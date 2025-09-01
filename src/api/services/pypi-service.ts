@@ -23,7 +23,7 @@ export class PyPIService {
   /**
    * Get package metadata with versions and compatibility information
    */
-  async getPackageMetadata(packageName: string, includePreReleases: boolean = false): Promise<PackageMetadata> {
+  async getPackageMetadata(packageName: string, includePreReleases = false): Promise<PackageMetadata> {
     const cacheKey = PackageCache.packageKey(packageName, includePreReleases);
 
     // Try to get from cache first
@@ -48,7 +48,7 @@ export class PyPIService {
   /**
    * Get all available versions for a package
    */
-  async getPackageVersions(packageName: string, includePreReleases: boolean = false): Promise<VersionInfo[]> {
+  async getPackageVersions(packageName: string, includePreReleases = false): Promise<VersionInfo[]> {
     const metadata = await this.getPackageMetadata(packageName, includePreReleases);
     const response = await this.fetchPackageData(packageName);
 
@@ -90,7 +90,7 @@ export class PyPIService {
   /**
    * Search for packages by name (if PyPI supports it)
    */
-  async searchPackages(_query: string, _limit: number = 20): Promise<string[]> {
+  async searchPackages(_query: string, _limit = 20): Promise<string[]> {
     // Note: PyPI deprecated the XML-RPC search API
     // This would need to be implemented with a different approach
     // or external search service if needed
@@ -273,7 +273,7 @@ export class PyPIService {
  * Factory for creating PyPI service instances with default configuration
  */
 export class PyPIServiceFactory {
-  static create(baseUrl: string = 'https://pypi.org/pypi'): PyPIService {
+  static create(baseUrl = 'https://pypi.org/pypi'): PyPIService {
     const pypiConfig: PyPIClientConfig = {
       baseUrl,
       timeout: 10000, // 10 seconds

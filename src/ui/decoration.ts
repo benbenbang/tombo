@@ -9,13 +9,13 @@ import {
     TextEditor,
     MarkdownString,
     DecorationInstanceRenderOptions
-} from "vscode";
+} from 'vscode';
 
-import { checkVersion } from "../semver/semverUtils";
-import { status, ReplaceItem } from "../toml/commands";
-import { validRange } from "semver";
-import DecorationPreferences from "../core/DecorationText";
-import Package from "../core/Package";
+import { checkVersion } from '../semver/semverUtils';
+import { status, ReplaceItem } from '../toml/commands';
+import { validRange } from 'semver';
+import DecorationPreferences from '../core/DecorationText';
+import Package from '../core/Package';
 import { PackageMetadata, VersionInfo } from '../api/types/pypi';
 import { PyPIError } from '../core/errors/pypi-errors';
 import { ParsedDependency } from '../toml/parser';
@@ -23,7 +23,7 @@ import { ParsedDependency } from '../toml/parser';
 export const latestVersion = () =>
     window.createTextEditorDecorationType({
         after: {
-            margin: "2em",
+            margin: '2em',
         },
     });
 
@@ -61,20 +61,20 @@ export default function decoration(
     // Get the position of the item's end
     const itemEndPosition = editor.document.positionAt(end);
     // Get the line containing the end position
-    let endofline = editor.document.lineAt(itemEndPosition).range.end;
-    const version = item.value?.replace(",", "");
+    const endofline = editor.document.lineAt(itemEndPosition).range.end;
+    const version = item.value?.replace(',', '');
     const [satisfies, maxSatisfying] = checkVersion(version, versions);
 
     const formatError = (error: string) => {
         // Markdown does not like newlines in middle of emphasis, or spaces next to emphasis characters.
         const error_parts = error.split('\n');
-        const markdown = new MarkdownString("#### Errors ");
-        markdown.appendMarkdown("\n");
+        const markdown = new MarkdownString('#### Errors ');
+        markdown.appendMarkdown('\n');
         // Ignore empty strings
         error_parts.filter(s => s).forEach(part => {
-            markdown.appendMarkdown("* ");
+            markdown.appendMarkdown('* ');
             markdown.appendText(part.trim()); // Gets rid of Markdown-breaking spaces, then append text safely escaped.
-            markdown.appendMarkdown("\n"); // Put the newlines back
+            markdown.appendMarkdown('\n'); // Put the newlines back
         });
         return markdown;
     };
@@ -84,8 +84,8 @@ export default function decoration(
         hoverMessage = formatError(error);
         contentCss = decorationPreferences.errorDecoratorCss;
     } else {
-        hoverMessage.appendMarkdown("#### Versions");
-        hoverMessage.appendMarkdown(` _( [View Package](https://pypi.org/project/${item.key.replace(/"/g, "")}) )_`);
+        hoverMessage.appendMarkdown('#### Versions');
+        hoverMessage.appendMarkdown(` _( [View Package](https://pypi.org/project/${item.key.replace(/"/g, '')}) )_`);
         hoverMessage.isTrusted = true;
 
         if (versions.length > 0) {
@@ -106,11 +106,11 @@ export default function decoration(
             };
             const isCurrent = version === maxSatisfying;
             const encoded = encodeURI(JSON.stringify(replaceData));
-            const command = `${isCurrent ? "**" : ""}[${version}](command:python.replaceVersion?${encoded})${isCurrent ? "**" : ""}`;
-            hoverMessage.appendMarkdown("\n* ");
+            const command = `${isCurrent ? '**' : ''}[${version}](command:python.replaceVersion?${encoded})${isCurrent ? '**' : ''}`;
+            hoverMessage.appendMarkdown('\n* ');
             hoverMessage.appendMarkdown(command);
         }
-        if (version == "?") {
+        if (version == '?') {
             // Only auto-replace if versions are available
             if (versions && versions.length > 0) {
                 const latestVersion = versions[0];
@@ -153,7 +153,7 @@ export default function decoration(
         }
         contentCss = decorationPreferences.compatibleDecoratorCss;
         // Special handling for placeholder versions
-        if (version === "?" && versions.length > 0) {
+        if (version === '?' && versions.length > 0) {
             // Question mark is a valid placeholder - treat it as compatible
             contentCss = decorationPreferences.compatibleDecoratorCss;
         }
@@ -168,7 +168,7 @@ export default function decoration(
             }
         }
 
-        contentCss.after!.contentText = contentCss.after!.contentText!.replace("${version}", versions[0])
+        contentCss.after!.contentText = contentCss.after!.contentText!.replace('${version}', versions[0]);
     }
 
     // Create a more precise range for the decoration - just the package name and version
@@ -189,7 +189,7 @@ export default function decoration(
     };
 
     // Only apply after-text decorations if version is valid and it's not on a line with multiple items
-    if (version != "?" && contentCss.after!.contentText!.length > 0) {
+    if (version != '?' && contentCss.after!.contentText!.length > 0) {
         // For items on a single line with multiple deps, don't show after-text to avoid overlapping
         if (!isMultipleItemsOnLine) {
             deco.renderOptions = contentCss;
@@ -243,7 +243,7 @@ export function createEnhancedDecoration(
         contentCss = decorationPreferences.errorDecoratorCss;
     } else if (!packageMetadata) {
         hasError = true;
-        hoverMessage.appendMarkdown("#### Package Not Found");
+        hoverMessage.appendMarkdown('#### Package Not Found');
         hoverMessage.appendMarkdown(`\n\nPackage '${name}' could not be found on PyPI.`);
         contentCss = decorationPreferences.errorDecoratorCss;
     } else {
@@ -325,17 +325,17 @@ function createPackageDecoration(
         hoverMessage.appendMarkdown(`\n\n**Current:** ${version}`);
 
         if (currentIsYanked) {
-            hoverMessage.appendMarkdown(" ⚠️ *Yanked*");
+            hoverMessage.appendMarkdown(' ⚠️ *Yanked*');
             contentCss = decorationPreferences.errorDecoratorCss;
         } else if (currentIsPreRelease) {
-            hoverMessage.appendMarkdown(" 🧪 *Pre-release*");
+            hoverMessage.appendMarkdown(' 🧪 *Pre-release*');
             isPreRelease = true;
         } else if (!currentIsLatest && satisfies) {
-            hoverMessage.appendMarkdown(" 📅 *Outdated*");
+            hoverMessage.appendMarkdown(' 📅 *Outdated*');
             isOutdated = true;
             contentCss = decorationPreferences.incompatibleDecoratorCss;
         } else if (!satisfies) {
-            hoverMessage.appendMarkdown(" ❌ *Incompatible*");
+            hoverMessage.appendMarkdown(' ❌ *Incompatible*');
             contentCss = decorationPreferences.incompatibleDecoratorCss;
         }
 
@@ -348,7 +348,7 @@ function createPackageDecoration(
     }
 
     // Available versions with commands
-    hoverMessage.appendMarkdown("\n\n#### Available Versions");
+    hoverMessage.appendMarkdown('\n\n#### Available Versions');
     const displayVersions = versions.slice(0, 10); // Limit to 10 most recent
 
     for (const availableVersion of displayVersions) {
@@ -373,9 +373,9 @@ function createPackageDecoration(
         }
 
         if (isYanked) {
-            versionText += " ⚠️";
+            versionText += ' ⚠️';
         } else if (isPre) {
-            versionText += " 🧪";
+            versionText += ' 🧪';
         }
 
         hoverMessage.appendMarkdown(`\n* ${versionText}`);
@@ -388,7 +388,7 @@ function createPackageDecoration(
     // Apply latest version to CSS template
     if (contentCss.after?.contentText) {
         contentCss.after.contentText = contentCss.after.contentText.replace(
-            "${version}",
+            '${version}',
             latestVersion
         );
     }
@@ -401,7 +401,7 @@ function createPackageDecoration(
  */
 function createErrorMarkdown(error: PyPIError): MarkdownString {
     const markdown = new MarkdownString();
-    markdown.appendMarkdown("#### Error");
+    markdown.appendMarkdown('#### Error');
     markdown.appendMarkdown(`\n\n${error.message}`);
 
     if (error.packageName) {

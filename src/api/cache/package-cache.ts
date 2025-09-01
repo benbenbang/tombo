@@ -124,7 +124,7 @@ export class PackageCache {
   /**
    * Generate cache key for package metadata
    */
-  static packageKey(packageName: string, includePreReleases: boolean = false): string {
+  static packageKey(packageName: string, includePreReleases = false): string {
     return `pkg:${packageName.toLowerCase()}:${includePreReleases ? 'pre' : 'stable'}`;
   }
 
@@ -156,12 +156,12 @@ export class PackageCache {
     let lruKey: string | null = null;
     let lruTime = Date.now();
 
-    for (const [key, entry] of this.cache) {
+    this.cache.forEach((entry, key) => {
       if (entry.lastAccessed < lruTime) {
         lruTime = entry.lastAccessed;
         lruKey = key;
       }
-    }
+    });
 
     if (lruKey) {
       this.cache.delete(lruKey);
@@ -188,11 +188,11 @@ export class PackageCache {
     const now = Date.now();
     const keysToDelete: string[] = [];
 
-    for (const [key, entry] of this.cache) {
+    this.cache.forEach((entry, key) => {
       if (now - entry.timestamp > entry.ttl * 1000) {
         keysToDelete.push(key);
       }
-    }
+    });
 
     keysToDelete.forEach(key => this.cache.delete(key));
   }

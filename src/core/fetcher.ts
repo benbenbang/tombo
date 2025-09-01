@@ -1,17 +1,17 @@
 import axios from 'axios';
-import Dependency from "./Dependency";
-import { StatusBar } from "../ui/status-bar";
-import { CompletionItem, CompletionItemKind, CompletionList, MarkdownString } from "vscode";
-import { sortText } from "../providers/autoCompletion";
-import Package from "./Package";
+import Dependency from './Dependency';
+import { StatusBar } from '../ui/status-bar';
+import { CompletionItem, CompletionItemKind, CompletionList, MarkdownString } from 'vscode';
+import { sortText } from '../providers/autoCompletion';
+import Package from './Package';
 import { TomboSettings } from './settings';
 import { PyPIService, PyPIServiceFactory } from '../api/services/pypi-service';
 import { PackageMetadata } from '../api/types/pypi';
 import { PyPIError, PackageNotFoundError } from '../core/errors/pypi-errors';
 import { ParsedDependency } from '../toml/parser';
 
-// Use require instead of import to avoid TypeScript error with NodeCache
-const NodeCache = require('node-cache');
+// Import NodeCache properly for TypeScript
+import NodeCache = require('node-cache');
 
 // Create a cache for PyPI responses
 const pypiCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 }); // Cache for 1 hour, check expiry every 10 mins
@@ -33,18 +33,18 @@ export interface EnhancedDependency {
  */
 export async function fetchPackageVersions(dependencies: string[] | Package[]): Promise<[Promise<Dependency[]>, Map<string, Dependency[]>]> {
     const settings = new TomboSettings();
-    const shouldListPreRels = settings.listPreReleases;
-    const indexServerURL = settings.pypiIndexUrl;
+    const shouldListPreRels = settings.getListPreReleases();
+    const indexServerURL = settings.getPypiIndexUrl();
 
-    StatusBar.setText("Loading", "👀 Fetching " + indexServerURL.replace(/^https?:\/\//, ''));
+    StatusBar.setText('Loading', '👀 Fetching ' + indexServerURL.replace(/^https?:\/\//, ''));
 
-    let responsesMap: Map<string, Dependency[]> = new Map();
+    const responsesMap: Map<string, Dependency[]> = new Map();
 
     // Extract package names from Package objects if needed
     const packageNames = dependencies.map(dep => typeof dep === 'string' ? dep : dep.key);
 
     // Filter out duplicates
-    const uniquePackages = [...new Set(packageNames)];
+    const uniquePackages = Array.from(new Set(packageNames));
 
     const responses = uniquePackages.map(transformServerResponse(shouldListPreRels, indexServerURL, dependencies));
 
@@ -66,7 +66,7 @@ function transformServerResponse(
             return Promise.resolve(processPackageData(packageName, cachedData, shouldListPreRels, dependencies));
         }
 
-        return axios.get(indexServerURL + packageName + "/json")
+        return axios.get(indexServerURL + packageName + '/json')
             .then((response: any) => {
                 // Cache the response
                 pypiCache.set(packageName, response.data);
@@ -76,7 +76,7 @@ function transformServerResponse(
                 console.error(`Error fetching ${packageName}:`, error);
                 return {
                     package: findPackageObject(packageName, dependencies),
-                    error: packageName + ": " + error.message,
+                    error: packageName + ': ' + error.message,
                 };
             });
     };
@@ -94,10 +94,10 @@ function processPackageData(
     // Extract all versions
     const versions = Object.keys(data.releases).reduce((result: string[], version: string) => {
         const isPreRelease = !shouldListPreRels && (
-            version.indexOf("a") !== -1 ||
-            version.indexOf("b") !== -1 ||
-            version.indexOf("rc") !== -1 ||
-            version.indexOf("dev") !== -1
+            version.indexOf('a') !== -1 ||
+            version.indexOf('b') !== -1 ||
+            version.indexOf('rc') !== -1 ||
+            version.indexOf('dev') !== -1
         );
 
         if (!isPreRelease) {
@@ -192,8 +192,8 @@ export async function fetchPackageMetadataEnhanced(
     settings?: TomboSettings
 ): Promise<EnhancedDependency[]> {
     const tomboSettings = settings || new TomboSettings();
-    const includePreReleases = tomboSettings.listPreReleases;
-    const indexUrl = tomboSettings.pypiIndexUrl;
+    const includePreReleases = tomboSettings.getListPreReleases();
+    const indexUrl = tomboSettings.getPypiIndexUrl();
 
     // Create PyPI service instance
     const pypiService = PyPIServiceFactory.createWithConfig({
@@ -203,7 +203,7 @@ export async function fetchPackageMetadataEnhanced(
         retryDelay: 1000
     });
 
-    StatusBar.setText("Loading", `🔍 Fetching from ${indexUrl.replace(/^https?:\/\//, '')}`);
+    StatusBar.setText('Loading', `🔍 Fetching from ${indexUrl.replace(/^https?:\/\//, '')}`);
 
     const results: EnhancedDependency[] = [];
 
@@ -243,10 +243,10 @@ export async function fetchPackageMetadataEnhanced(
 
         // Update progress
         const progress = Math.min(i + batchSize, dependencies.length);
-        StatusBar.setText("Loading", `🔍 Processed ${progress}/${dependencies.length} packages`);
+        StatusBar.setText('Loading', `🔍 Processed ${progress}/${dependencies.length} packages`);
     }
 
-    StatusBar.setText("Info", `✅ Processed ${dependencies.length} packages`);
+    StatusBar.setText('Info', `✅ Processed ${dependencies.length} packages`);
 
     return results;
 }
@@ -325,15 +325,15 @@ function createEnhancedCompletionItems(
         const isPreRelease = metadata.preReleaseVersions.has(version);
 
         if (isLatest) {
-            documentation.appendMarkdown(`**Latest Version** ✨\n\n`);
+            documentation.appendMarkdown('**Latest Version** ✨\n\n');
         }
 
         if (isYanked) {
-            documentation.appendMarkdown(`⚠️ **This version has been yanked**\n\n`);
+            documentation.appendMarkdown('⚠️ **This version has been yanked**\n\n');
         }
 
         if (isPreRelease) {
-            documentation.appendMarkdown(`🧪 **Pre-release Version**\n\n`);
+            documentation.appendMarkdown('🧪 **Pre-release Version**\n\n');
         }
 
         // Python requirement

@@ -290,7 +290,7 @@ export function checkVersion(resolved: ResolvedEnvironment | undefined): boolean
     return false;
 }
 
-import Package from "./Package";
+import Package from './Package';
 
 // Regular expression for requirements.txt format
 // Matches package specifiers like:
