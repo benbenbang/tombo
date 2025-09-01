@@ -1,5 +1,5 @@
 import { window, Position, TextEditor, Disposable } from 'vscode';
-import { checkAndFetchVersionForPosition } from './quickFill';
+// import { checkAndFetchVersionForPosition } from './quickFill'; // Disabled during nuclear cleanup
 
 /**
  * Tracks cursor position and triggers version fetching when cursor is stationary
@@ -83,7 +83,7 @@ export class CursorTracker {
             (fileName.includes('requirements') && fileName.endsWith('.txt'))) {
 
             console.log(`Cursor idle for ${this.IDLE_TIME}ms at position ${position.line}:${position.character}`);
-            checkAndFetchVersionForPosition(editor, position);
+            // checkAndFetchVersionForPosition(editor, position); // Disabled during nuclear cleanup
         }
     }
 }
