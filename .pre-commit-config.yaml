@@ -1,6 +1,10 @@
 repos:
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.34.0
+    hooks:
+      - id: eslint
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-yaml
         args:
@@ -11,12 +15,15 @@ repos:
       - id: check-added-large-files
         args:
           - --maxkb=1024
+        stages:
+          - pre-commit
+      - id: requirements-txt-fixer
       - id: check-merge-conflict
+      - id: debug-statements
       - id: pretty-format-json
         args:
           - --autofix
           - --indent=2
-      - id: debug-statements
   - repo: local
     hooks:
       - id: validate-commit-msg
@@ -27,3 +34,8 @@ repos:
         language: pygrep
         stages:
           - commit-msg
+      # - id: tsc-check
+      #   name: TypeScript type check
+      #   entry: npx tsc --noEmit
+      #   language: system
+      #   files: \.(ts|tsx)$
