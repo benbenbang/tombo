@@ -1,0 +1,29 @@
+# Poetry v1 Test File - Perfect Completion Support
+# Test completion by placing cursor between quotes in version strings
+
+[tool.poetry]
+name = "poetry-v1-test"
+version = "0.1.0"
+description = "Test project for Poetry v1 completion"
+
+[tool.poetry.dependencies]
+python = "^3.9.13"    # Cursor in version → shows Python versions
+click = "~8.1"        # Cursor after 8. → shows patch versions
+httpx = "^0.23.0"     # Cursor in version → shows compatible versions
+requests = ">=2.28.0" # Cursor in version → shows available versions
+pydantic = "==1.10.7" # Cursor in version → shows exact matches
+fastapi = ""          # Empty version - cursor shows all versions
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.0"  # Dev dependencies also work perfectly
+black = "~23.1"    # Cursor in version for alternatives
+isort = ">=5.12.0" # Multiple version operators supported
+mypy = ""          # Empty version for full list
+
+[tool.poetry.group.test.dependencies]
+coverage = "^7.1.0" # Test group dependencies
+pytest-cov = "~4.0" # Cursor in version shows alternatives
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
