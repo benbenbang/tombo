@@ -1,0 +1,28 @@
+# Poetry v2 Test File - Parentheses Format Support
+# Note: Requires more typing to trigger completion (acceptable trade-off)
+# Test by typing: "package (>=" then completion will trigger
+
+[project]
+name = "poetry-v2-test"
+version = "0.1.0"
+description = "Test project for Poetry v2 parentheses completion format"
+dependencies = [
+    "pandas (>=2.0,<3.0)",   # Parentheses format - type past ( for trigger
+    "numpy (==1.24.3)",      # Exact version in parentheses
+    "requests (^2.28.0)",    # Caret constraint in parentheses
+    "django (~=4.1.0)",      # Tilde constraint in parentheses
+    "fastapi",               # Simple package name works instantly
+    "pytest[testing] (>=7)", # With extras and parentheses
+]
+
+# Mixed format also works
+[tool.poetry.dependencies]
+python = "^3.9"  # Poetry v1 style still works
+click = "~8.1.0" # Traditional quoted format
+
+[tool.poetry.group.dev.dependencies]
+black = "23.1.0" # Unquoted also works (Poetry extension)
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,26 @@
+# PEP 621 Test File - Instant Completion Support
+# Test completion by placing cursor after package names or version operators
+
+[project]
+name = "pep621-test"
+version = "0.1.0"
+description = "Test project for PEP 621 completion"
+dependencies = [
+    "requests",           # Cursor after package → shows version operators
+    "numpy>=",            # Cursor after >= → shows versions instantly
+    "pandas~=1.5",        # Cursor in version → shows alternatives
+    "django==4.",         # Cursor after 4. → shows patch versions
+    "fastapi^0.95",       # Cursor in version → shows compatible versions
+    "pytest[testing]>=7", # With extras - cursor after >= → shows versions
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=",     # Development dependencies also work
+    "isort~=5.12", # Cursor in version for alternatives
+    "mypy==1.",    # Type checking versions
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
