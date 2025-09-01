@@ -213,6 +213,11 @@ npm run watch           # Start development mode
   - Try different trigger characters (`=`, `~`, `>`, `<`, `space`) if completion doesn't appear
   - Use Tombo's debug logging to identify conflicts: `tombo.enableDebugLogging` → `true`
 
+**Poetry v2 syntax limitations:**
+- Poetry v2's parentheses syntax `"pandas (>=2.0,<3.0)"` doesn't honor PEP 621 standards
+- **Workaround**: Completion triggers on operators (`=`, `>`, `<`, `~`) but parentheses `( )` require manual typing
+- **Example**: Type `pandas >=` → completion works, but `pandas (>=` → you handle the parentheses manually
+
 **File naming requirements:**
 - Must be exactly `pyproject.toml` (not `*-pyproject.toml` or similar variants)
 - Requirements files must match `requirements*.txt` pattern
