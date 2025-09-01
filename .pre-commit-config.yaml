@@ -34,8 +34,8 @@ repos:
         language: pygrep
         stages:
           - commit-msg
-      # - id: tsc-check
-      #   name: TypeScript type check
-      #   entry: npx tsc --noEmit
-      #   language: system
-      #   files: \.(ts|tsx)$
+      - id: tsc-check
+        name: TypeScript type check
+        entry: npx tsc --noEmit
+        language: system
+        files: \.(ts|tsx)$
