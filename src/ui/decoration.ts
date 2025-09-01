@@ -1,5 +1,6 @@
 /**
- * Helps to manage decorations for the TOML files.
+ * Modern decoration system that integrates with PyPIService
+ * Provides enhanced visual indicators for package compatibility and versions
  */
 import {
     window,
@@ -15,6 +16,9 @@ import { status, ReplaceItem } from "../toml/commands";
 import { validRange } from "semver";
 import DecorationPreferences from "../core/DecorationText";
 import Package from "../core/Package";
+import { PackageMetadata, VersionInfo } from '../api/types/pypi';
+import { PyPIError } from '../core/errors/pypi-errors';
+import { ParsedDependency } from '../toml/parser';
 
 export const latestVersion = () =>
     window.createTextEditorDecorationType({
@@ -24,11 +28,24 @@ export const latestVersion = () =>
     });
 
 /**
- * Create a decoration for the given package.
- * @param editor
- * @param package
- * @param version
- * @param versions
+ * Enhanced decoration result with additional metadata
+ */
+export interface EnhancedDecorationResult {
+    decoration: DecorationOptions;
+    hasError: boolean;
+    isOutdated: boolean;
+    isPreRelease: boolean;
+    availableVersions: string[];
+}
+
+/**
+ * Create a decoration for the given package using legacy format.
+ * @param editor - VS Code text editor
+ * @param item - Legacy package item
+ * @param versions - Available versions
+ * @param decorationPreferences - Decoration styling preferences
+ * @param error - Error message if any
+ * @returns Decoration options for the package
  */
 export default function decoration(
     editor: TextEditor,
@@ -195,4 +212,209 @@ export default function decoration(
     }
 
     return deco;
+}
+
+/**
+ * Enhanced decoration function that integrates with PackageMetadata
+ * Provides richer information and better error handling
+ */
+export function createEnhancedDecoration(
+    editor: TextEditor,
+    dependency: ParsedDependency,
+    packageMetadata: PackageMetadata | null,
+    decorationPreferences: DecorationPreferences,
+    error?: PyPIError,
+): EnhancedDecorationResult {
+    const { name, version, startPosition, endPosition } = dependency;
+    const startPos = editor.document.positionAt(startPosition);
+    const endPos = editor.document.positionAt(endPosition);
+
+    let hoverMessage = new MarkdownString();
+    let contentCss = {} as DecorationInstanceRenderOptions;
+    let hasError = false;
+    let isOutdated = false;
+    let isPreRelease = false;
+    let availableVersions: string[] = [];
+
+    // Handle error states
+    if (error) {
+        hasError = true;
+        hoverMessage = createErrorMarkdown(error);
+        contentCss = decorationPreferences.errorDecoratorCss;
+    } else if (!packageMetadata) {
+        hasError = true;
+        hoverMessage.appendMarkdown("#### Package Not Found");
+        hoverMessage.appendMarkdown(`\n\nPackage '${name}' could not be found on PyPI.`);
+        contentCss = decorationPreferences.errorDecoratorCss;
+    } else {
+        // Package found, create rich decoration
+        const result = createPackageDecoration(
+            dependency,
+            packageMetadata,
+            decorationPreferences
+        );
+
+        hoverMessage = result.hoverMessage;
+        contentCss = result.contentCss;
+        isOutdated = result.isOutdated;
+        isPreRelease = result.isPreRelease;
+        availableVersions = packageMetadata.versions;
+
+        // Update status for version replacement commands
+        if (packageMetadata.versions.length > 0) {
+            status.replaceItems.push({
+                item: `"${packageMetadata.versions[0]}"`,
+                start: startPosition,
+                end: endPosition,
+            });
+        }
+    }
+
+    const decoration: DecorationOptions = {
+        range: new Range(startPos, endPos),
+        hoverMessage,
+        renderOptions: contentCss,
+    };
+
+    return {
+        decoration,
+        hasError,
+        isOutdated,
+        isPreRelease,
+        availableVersions,
+    };
+}
+
+/**
+ * Create rich package decoration with version information
+ */
+function createPackageDecoration(
+    dependency: ParsedDependency,
+    packageMetadata: PackageMetadata,
+    decorationPreferences: DecorationPreferences
+): {
+    hoverMessage: MarkdownString;
+    contentCss: DecorationInstanceRenderOptions;
+    isOutdated: boolean;
+    isPreRelease: boolean;
+} {
+    const { name, version } = dependency;
+    const { versions, latestVersion, summary, yankedVersions, preReleaseVersions } = packageMetadata;
+
+    const hoverMessage = new MarkdownString();
+    let contentCss = decorationPreferences.compatibleDecoratorCss;
+    let isOutdated = false;
+    let isPreRelease = false;
+
+    // Build header with package information
+    hoverMessage.appendMarkdown(`#### ${name}`);
+    hoverMessage.appendMarkdown(` _([View on PyPI](https://pypi.org/project/${name}/))_`);
+    hoverMessage.isTrusted = true;
+
+    if (summary) {
+        hoverMessage.appendMarkdown(`\n\n${summary}`);
+    }
+
+    // Current version analysis
+    if (version) {
+        const [satisfies, maxSatisfying] = checkVersion(version, versions);
+        const currentIsLatest = version === latestVersion;
+        const currentIsYanked = yankedVersions.has(version);
+        const currentIsPreRelease = preReleaseVersions.has(version);
+
+        hoverMessage.appendMarkdown(`\n\n**Current:** ${version}`);
+
+        if (currentIsYanked) {
+            hoverMessage.appendMarkdown(" ⚠️ *Yanked*");
+            contentCss = decorationPreferences.errorDecoratorCss;
+        } else if (currentIsPreRelease) {
+            hoverMessage.appendMarkdown(" 🧪 *Pre-release*");
+            isPreRelease = true;
+        } else if (!currentIsLatest && satisfies) {
+            hoverMessage.appendMarkdown(" 📅 *Outdated*");
+            isOutdated = true;
+            contentCss = decorationPreferences.incompatibleDecoratorCss;
+        } else if (!satisfies) {
+            hoverMessage.appendMarkdown(" ❌ *Incompatible*");
+            contentCss = decorationPreferences.incompatibleDecoratorCss;
+        }
+
+        hoverMessage.appendMarkdown(`\n**Latest:** ${latestVersion}`);
+    }
+
+    // Python version requirements
+    if (packageMetadata.requiresPython) {
+        hoverMessage.appendMarkdown(`\n**Requires Python:** ${packageMetadata.requiresPython}`);
+    }
+
+    // Available versions with commands
+    hoverMessage.appendMarkdown("\n\n#### Available Versions");
+    const displayVersions = versions.slice(0, 10); // Limit to 10 most recent
+
+    for (const availableVersion of displayVersions) {
+        const replaceData: ReplaceItem = {
+            item: `"${availableVersion}"`,
+            start: dependency.startPosition,
+            end: dependency.endPosition,
+        };
+
+        const isCurrent = availableVersion === version;
+        const isLatest = availableVersion === latestVersion;
+        const isYanked = yankedVersions.has(availableVersion);
+        const isPre = preReleaseVersions.has(availableVersion);
+
+        const encoded = encodeURI(JSON.stringify(replaceData));
+        let versionText = `[${availableVersion}](command:python.replaceVersion?${encoded})`;
+
+        if (isCurrent) {
+            versionText = `**${versionText}** ← *current*`;
+        } else if (isLatest) {
+            versionText = `**${versionText}** ← *latest*`;
+        }
+
+        if (isYanked) {
+            versionText += " ⚠️";
+        } else if (isPre) {
+            versionText += " 🧪";
+        }
+
+        hoverMessage.appendMarkdown(`\n* ${versionText}`);
+    }
+
+    if (versions.length > 10) {
+        hoverMessage.appendMarkdown(`\n\n*... and ${versions.length - 10} more versions*`);
+    }
+
+    // Apply latest version to CSS template
+    if (contentCss.after?.contentText) {
+        contentCss.after.contentText = contentCss.after.contentText.replace(
+            "${version}",
+            latestVersion
+        );
+    }
+
+    return { hoverMessage, contentCss, isOutdated, isPreRelease };
+}
+
+/**
+ * Create error markdown for PyPI errors
+ */
+function createErrorMarkdown(error: PyPIError): MarkdownString {
+    const markdown = new MarkdownString();
+    markdown.appendMarkdown("#### Error");
+    markdown.appendMarkdown(`\n\n${error.message}`);
+
+    if (error.packageName) {
+        markdown.appendMarkdown(`\n\n**Package:** ${error.packageName}`);
+    }
+
+    if (error.code) {
+        markdown.appendMarkdown(`\n**Error Code:** ${error.code}`);
+    }
+
+    if (error.retryAfter) {
+        markdown.appendMarkdown(`\n**Retry After:** ${error.retryAfter}s`);
+    }
+
+    return markdown;
 }
