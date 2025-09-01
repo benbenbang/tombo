@@ -1,103 +1,48 @@
 'use strict';
 /**
- * This extension helps to manage Python package dependency versions.
- * It supports both pyproject.toml and requirements.txt files.
+ * Tombo VS Code Extension
+ * Modern Python package dependency manager with clean architecture
  */
-import {
-    window,
-    workspace,
-    ExtensionContext,
-    TextDocumentChangeEvent,
-    languages,
-    DocumentSelector,
-    CodeActionKind,
-} from 'vscode';
-import pyListener from './core/listener';
-import PyCommands from './toml/commands';
-import { VersionCompletions, FeaturesCompletions } from './providers/autoCompletion';
-import { QuickActions } from './providers/quickAction';
-import { quickFillListener } from './providers/quickFill';
-import { CursorTracker } from './providers/cursorTracker';
 
-export function activate(context: ExtensionContext) {
-    // Support both pyproject.toml and requirements.txt files
-    const tomlSelector: DocumentSelector = { language: 'toml', pattern: '**/pyproject.toml' };
-    const requirementsSelector: DocumentSelector = { pattern: '**/requirements*.txt' };
+import { ExtensionContext } from 'vscode';
+import { TomboExtension } from './extension/tombo-extension';
 
-    context.subscriptions.push(
-        // Add active text editor listener and run once on start.
-        window.onDidChangeActiveTextEditor(pyListener),
+let tomboExtension: TomboExtension | null = null;
 
-        // When the text document is changed, fetch + check dependencies
-        workspace.onDidChangeTextDocument((e: TextDocumentChangeEvent) => {
-            const { fileName } = e.document;
-            if (
-                fileName.toLocaleLowerCase().endsWith('pyproject.toml') ||
-                (fileName.toLocaleLowerCase().includes('requirements') && fileName.toLocaleLowerCase().endsWith('.txt'))
-            ) {
-                if (!e.document.isDirty) {
-                    pyListener(window.activeTextEditor);
-                }
+/**
+ * Extension activation entry point
+ */
+export async function activate(context: ExtensionContext): Promise<void> {
+    try {
+        tomboExtension = new TomboExtension(context);
+        await tomboExtension.activate();
 
-                // Handle quick fill functionality (typing "?" to auto-fill latest version)
-                quickFillListener(e);
-            }
-        }),
-
-        // Register the versions completions provider for both file types
-        languages.registerCompletionItemProvider(
-            tomlSelector,
-            new VersionCompletions(),
-            "'",
-            '"',
-            '.',
-            '+',
-            '-',
-            '=',
-            '0',
-            '1',
-            '2',
-            '3',
-            '4',
-            '5',
-            '6',
-            '7',
-            '8',
-            '9',
-        ),
-
-        languages.registerCompletionItemProvider(
-            requirementsSelector,
-            new VersionCompletions(),
-            '=',
-            '~',
-            '>',
-            '<',
-            '^',
-            '!',
-            ' ',
-        ),
-
-        // Register the Quick Actions provider
-        languages.registerCodeActionsProvider([tomlSelector, requirementsSelector], new QuickActions(), {
-            providedCodeActionKinds: [CodeActionKind.QuickFix],
-        }),
-
-        // Register the features auto completions provider
-        languages.registerCompletionItemProvider(tomlSelector, new FeaturesCompletions(), "'", '"'),
-    );
-
-    pyListener(window.activeTextEditor);
-
-    // Add commands
-    context.subscriptions.push(PyCommands.replaceVersion);
-
-    // Start the cursor tracker for idle detection
-    const cursorTracker = new CursorTracker();
-    cursorTracker.start();
-    context.subscriptions.push({
-        dispose: () => cursorTracker.dispose(),
-    });
+        console.log('[Tombo] Extension activated with modern architecture');
+    } catch (error) {
+        console.error('[Tombo] Failed to activate extension:', error);
+        throw error;
+    }
 }
 
-export function deactivate() {}
+/**
+ * Extension deactivation entry point
+ */
+export async function deactivate(): Promise<void> {
+    if (tomboExtension) {
+        try {
+            await tomboExtension.deactivate();
+            tomboExtension = null;
+            console.log('[Tombo] Extension deactivated cleanly');
+        } catch (error) {
+            console.error('[Tombo] Error during deactivation:', error);
+        }
+    }
+}
+
+/**
+ * Get the active Tombo extension instance
+ * Useful for testing and debugging
+ */
+export function getTomboExtension(): TomboExtension | null {
+    return tomboExtension;
+}
