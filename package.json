@@ -28,6 +28,13 @@
     ],
     "configuration": {
       "properties": {
+        "tombo.cacheTimeoutMinutes": {
+          "default": 10,
+          "description": "Cache timeout in minutes for PyPI package data",
+          "maximum": 1440,
+          "minimum": 1,
+          "type": "number"
+        },
         "tombo.compatibleDecorator": {
           "default": " \u2713",
           "description": "Decorator text for compatible versions",
@@ -41,6 +48,11 @@
           },
           "description": "CSS styling for compatible version decorators",
           "type": "object"
+        },
+        "tombo.enableDebugLogging": {
+          "default": false,
+          "description": "Enable debug logging to VS Code Output Panel. Useful for troubleshooting completion and hover issues.",
+          "type": "boolean"
         },
         "tombo.errorDecorator": {
           "default": " \u26a0\ufe0f",
@@ -75,10 +87,31 @@
           "description": "Show pre-release versions in the completion list",
           "type": "boolean"
         },
+        "tombo.maxCacheSize": {
+          "default": 1000,
+          "description": "Maximum number of packages to cache",
+          "maximum": 10000,
+          "minimum": 10,
+          "type": "number"
+        },
         "tombo.pypiIndexUrl": {
           "default": "https://pypi.org/pypi/",
           "description": "URL of the PyPI index server to use for package information",
           "type": "string"
+        },
+        "tombo.requestTimeout": {
+          "default": 10000,
+          "description": "Request timeout in milliseconds for PyPI API calls",
+          "maximum": 60000,
+          "minimum": 1000,
+          "type": "number"
+        },
+        "tombo.retryAttempts": {
+          "default": 3,
+          "description": "Number of retry attempts for failed PyPI requests",
+          "maximum": 10,
+          "minimum": 1,
+          "type": "number"
         },
         "tombo.showNotifications": {
           "default": "onError",
@@ -107,7 +140,7 @@
     "node-cache": "^5.1.2",
     "vscode-languageclient": "^8.1.0"
   },
-  "description": "Python package version management for pyproject.toml and requirements.txt files",
+  "description": "Modern Python dependency manager with intelligent PyPI completion for pyproject.toml and requirements.txt",
   "devDependencies": {
     "@types/fs-extra": "^11.0.1",
     "@types/glob": "^8.1.0",
@@ -143,7 +176,14 @@
     "requirements",
     "pyproject",
     "toml",
-    "dependencies"
+    "dependencies",
+    "package-manager",
+    "completion",
+    "pep621",
+    "poetry",
+    "pip",
+    "autocomplete",
+    "version-management"
   ],
   "license": "MIT",
   "main": "./dist/extension.js",
