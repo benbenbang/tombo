@@ -12,7 +12,13 @@ vsc-extension-quickstart.md
 **/*.ts
 .venv/**
 .nox/**
-.github/
+# Exclude most .github files but keep LICENSE
+.github/development.md
+.github/CONTRIBUTING.md
+.github/INSTALL.md
+.github/CODE_OF_CONDUCT.md
+.github/SECURITY.md
+.github/SUPPORT.md
 **/__pycache__/**
 **/.pyc
 bundled/libs/bin/**
