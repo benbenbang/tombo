@@ -1,5 +1,29 @@
 import { TextDocument } from "vscode";
 import Item from "../core/Package";
+import { PackageMetadata, VersionInfo } from '../api/types/pypi';
+import { PyPIService } from '../api/services/pypi-service';
+
+/**
+ * Represents a dependency found in TOML with enhanced metadata
+ */
+export interface ParsedDependency {
+  name: string;
+  version?: string;
+  startPosition: number;
+  endPosition: number;
+  source: 'dependencies' | 'dev-dependencies' | 'optional-dependencies';
+  extras?: string[];
+  isPep621?: boolean; // Indicates if this is from PEP 621 array format
+  originalText?: string; // Original dependency string for PEP 621 entries
+}
+
+/**
+ * Result of parsing dependencies with enhanced metadata integration
+ */
+export interface DependencyParseResult {
+  dependencies: ParsedDependency[];
+  errors: string[];
+}
 
 // This regex is for complex TOML with nested versions
 export const RE_VERSION = /^[ \t]*(?<!#)(\S+?)([ \t]*=[ \t]*)(?:({.*?version[ \t]*=[ \t]*)("|')(.*?)\4|("|')(.*?)\6)/;
@@ -11,6 +35,13 @@ export const RE_FEATURES = /^[ \t]*(?<!#)((?:[\S]+?[ \t]*=[ \t]*.*?{.*?)?feature
 const RE_TABLE_HEADER = /^[ \t]*(?!#)[ \t]*\[[ \t]*(.+?)[ \t]*\][ \t]*$/;
 const RE_TABLE_HEADER_DEPENDENCY = /^(?:.+?\.)?(?:dev-)?dependencies(?:\.([^.]+?))?$/;
 const RE_PROJECT_DEPENDENCIES = /^project$/;
+const RE_PROJECT_OPTIONAL_DEPENDENCIES = /^project\.optional-dependencies$/;
+
+// PEP 621 dependency patterns for array format
+// Matches: "package>=1.0.0", "package[extra]~=1.0", "package", etc.
+const RE_PEP621_DEPENDENCY = /^"?([a-zA-Z0-9_-]+(?:\[[^\]]*\])?)(.*?)"?$/;
+const RE_PEP621_VERSION_CONSTRAINT = /([><=!~]+)(.+)/;
+const RE_PEP621_EXTRAS = /\[([^\]]+)\]/;
 export function findPackage(document: TextDocument, line: number): string | undefined {
     while (--line >= 0) {
         const match = document.lineAt(line).text.match(RE_TABLE_HEADER);
@@ -67,7 +98,8 @@ export function findPackageAndVersion(
 
 /**
  * Finds all version items with a flat package=version pair.
- * @param item Item to search in
+ * @param item - Item to search in
+ * @returns Array of dependency items
  */
 function findVersion(item: Item): Item[] {
     let dependencies: Item[] = [];
@@ -100,7 +132,8 @@ function findVersionTable(table: Item): Item | null {
 
 /**
  * Filters all dependency related items with a flat package=version match.
- * @param items
+ * @param items - Parsed TOML items
+ * @returns Filtered dependency items
  */
 export function filterPackages(items: Item[]): Item[] {
     let dependencies: Item[] = [];
@@ -111,33 +144,23 @@ export function filterPackages(items: Item[]): Item[] {
         if (!value.key.startsWith("package.metadata") && value.key.endsWith("dependencies")) {
             dependencies = dependencies.concat(findVersion(value));
         }
-        // Handle Poetry 2.x [project] format
+        // Handle PEP 621 [project] format
         else if (value.key.match(RE_PROJECT_DEPENDENCIES)) {
             for (const field of value.values) {
                 if (field.key === "dependencies" && field.values.length > 0) {
-                    // Poetry 2.x project.dependencies is an array of strings like "loguru (>=0.7.3,<0.8.0)"
-                    for (const dep of field.values) {
-                        if (typeof dep.value === 'string') {
-                            // First try to match "package (version)" format
-                            let depMatch = dep.value.match(/^"?([^"(]+)\s*\(([^)]+)\)/);
-                            // If that doesn't match, try the "package(version)" format
-                            if (!depMatch) {
-                                depMatch = dep.value.match(/^"?([^"(]+)\(([^)]+)\)/);
-                            }
-                            // If still no match, try without any version constraint
-                            if (!depMatch) {
-                                depMatch = dep.value.match(/^"?([^"(]+)/);
-                            }
-                            if (depMatch) {
-                                const item = new Item();
-                                item.key = depMatch[1].trim();
-                                item.value = depMatch[2] ? depMatch[2].trim() : "";
-                                item.start = dep.start;
-                                item.end = dep.end;
-                                dependencies.push(item);
-                            }
-                        }
-                    }
+                    // PEP 621 project.dependencies is an array of strings like "requests>=2.28.0"
+                    const projectDeps = parsePep621Dependencies(field.values, 'dependencies');
+                    dependencies = dependencies.concat(projectDeps);
+                }
+            }
+        }
+        // Handle PEP 621 [project.optional-dependencies] format
+        else if (value.key.match(RE_PROJECT_OPTIONAL_DEPENDENCIES)) {
+            for (const field of value.values) {
+                if (field.values.length > 0) {
+                    // Each field represents a dependency group (e.g., dev, test, docs)
+                    const optionalDeps = parsePep621Dependencies(field.values, 'optional-dependencies');
+                    dependencies = dependencies.concat(optionalDeps);
                 }
             }
         }
@@ -157,8 +180,9 @@ export function filterPackages(items: Item[]): Item[] {
 }
 
 /**
- *
- * @param data Parse the given document and index all items.
+ * Parse the given document and index all items.
+ * @param data - TOML document content
+ * @returns Parsed root item containing all TOML data
  */
 export function parse(data: string): Item {
     let item: Item = new Item();
@@ -171,8 +195,9 @@ export function parse(data: string): Item {
 
 /**
  * Parse table level items.
- * @param data
- * @param parent
+ * @param data - TOML content
+ * @param parent - Parent item to populate
+ * @returns Updated parent item
  */
 function parseTables(data: string, parent: Item): Item {
     let item: Item = new Item();
@@ -203,9 +228,10 @@ function parseTables(data: string, parent: Item): Item {
 
 /**
  * Parse key=value pairs.
- * @param data
- * @param parent
- * @param index
+ * @param data - TOML content
+ * @param parent - Parent item to populate
+ * @param index - Current parsing position
+ * @returns Updated parsing position
  */
 function parseValues(data: string, parent: Item, index: number): number {
     let i = index;
@@ -277,9 +303,10 @@ function isCratesDep(i: Item): boolean {
 
 /**
  * Parse array elements.
- * @param data
- * @param parent
- * @param index
+ * @param data - TOML content
+ * @param parent - Parent item to populate
+ * @param index - Current parsing position
+ * @returns Updated parsing position
  */
 function parseArray(data: string, parent: Item, index: number): number {
     let i = index;
@@ -303,10 +330,11 @@ function parseArray(data: string, parent: Item, index: number): number {
 
 /**
  * Parse string
- * @param data
- * @param item
- * @param index
- * @param opener
+ * @param data - TOML content
+ * @param item - Item to populate
+ * @param index - Current parsing position
+ * @param opener - Quote character
+ * @returns Updated parsing position
  */
 function parseString(data: string, item: Item, index: number, opener: string): number {
     let i = index;
@@ -340,8 +368,9 @@ function parseString(data: string, item: Item, index: number, opener: string): n
 
 /**
  * Skip data until '\n'
- * @param data
- * @param index
+ * @param data - TOML content
+ * @param index - Current parsing position
+ * @returns Updated parsing position
  */
 function skipLineData(data: string, index: number): number {
     let i = index;
@@ -356,8 +385,9 @@ function skipLineData(data: string, index: number): number {
 
 /**
  * Get current line data
- * @param data
- * @param index
+ * @param data - TOML content
+ * @param index - Current parsing position
+ * @returns Current line content
  */
 function getLine(data: string, index: number): string {
     let i = index;
@@ -375,9 +405,10 @@ function getLine(data: string, index: number): string {
 
 /**
  * Parse key
- * @param data
- * @param item
- * @param index
+ * @param data - TOML content
+ * @param item - Item to populate
+ * @param index - Current parsing position
+ * @returns Updated parsing position
  */
 function parseKey(data: string, item: Item, index: number): number {
     let i = index;
@@ -398,10 +429,10 @@ function parseKey(data: string, item: Item, index: number): number {
 
 /**
  * Parse boolean
- * @param data
- * @param item
- * @param index
- * @param opener
+ * @param data - TOML content
+ * @param item - Item to populate
+ * @param index - Current parsing position
+ * @returns Updated parsing position
  */
 function parseBoolean(data: string, item: Item, index: number): number {
     const ch = data.charAt(index);
@@ -419,10 +450,10 @@ function parseBoolean(data: string, item: Item, index: number): number {
 
 /**
  * Parse number
- * @param data
- * @param item
- * @param index
- * @param opener
+ * @param data - TOML content
+ * @param item - Item to populate
+ * @param index - Current parsing position
+ * @returns Updated parsing position
  */
 function parseNumber(data: string, item: Item, index: number): number {
     const ch = data.charAt(index);
@@ -461,11 +492,11 @@ function parseNumber(data: string, item: Item, index: number): number {
 }
 
 /**
- * Reset some values
- * @param item
- * @param parent
- * @param i
- * @param buff
+ * Reset some values and create new item
+ * @param item - Current item to finalize
+ * @param parent - Parent item to add to
+ * @param i - Current parsing position
+ * @returns New empty item
  */
 function initNewItem(item: Item, parent: Item, i: number) {
     if (item.start !== -1) {
@@ -508,4 +539,192 @@ function isGitConflictLine(line: string) {
 
 function isDisabledLine(line: string) {
     return line.replace(/\s/g, '').endsWith("#crates:disable-check");
+}
+
+/**
+ * Enhanced dependency parser that integrates with PyPIService
+ * Converts legacy Item parsing to modern ParsedDependency format
+ */
+export async function parseDependenciesWithMetadata(
+    document: TextDocument,
+    pypiService?: PyPIService
+): Promise<DependencyParseResult> {
+    const tomlContent = document.getText();
+    const rootItem = parse(tomlContent);
+    const legacyItems = filterPackages([rootItem]);
+
+    const dependencies: ParsedDependency[] = [];
+    const errors: string[] = [];
+
+    for (const item of legacyItems) {
+        try {
+            const dependency = convertItemToParsedDependency(item);
+            if (dependency) {
+                dependencies.push(dependency);
+
+                // Optionally validate with PyPI if service is provided
+                if (pypiService && dependency.name) {
+                    try {
+                        await pypiService.getPackageMetadata(dependency.name);
+                        // Package exists on PyPI
+                    } catch (error) {
+                        errors.push(`Package '${dependency.name}' not found on PyPI`);
+                    }
+                }
+            }
+        } catch (error) {
+            errors.push(`Failed to parse dependency: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }
+
+    return { dependencies, errors };
+}
+
+/**
+ * Convert legacy Item to modern ParsedDependency
+ */
+export function convertItemToParsedDependency(item: Item): ParsedDependency | null {
+    if (!item.key) {
+        return null;
+    }
+
+    // Check if this is a PEP 621 dependency with additional metadata
+    const isPep621 = (item as any).isPep621 || false;
+    const originalText = (item as any).originalText || '';
+    const itemExtras = (item as any).extras || [];
+    const itemSource = (item as any).source;
+
+    // Determine dependency source based on context
+    let source: ParsedDependency['source'] = 'dependencies';
+    if (itemSource) {
+        source = itemSource;
+    } else if (item.key.includes('dev')) {
+        source = 'dev-dependencies';
+    } else if (item.key.includes('optional')) {
+        source = 'optional-dependencies';
+    }
+
+    return {
+        name: item.key.trim(),
+        version: item.value?.toString().trim() || undefined,
+        startPosition: item.start,
+        endPosition: item.end,
+        source,
+        extras: itemExtras,
+        isPep621,
+        originalText: isPep621 ? originalText : undefined
+    };
+}
+
+/**
+ * Parse PEP 621 dependency arrays into Item format for compatibility
+ * @param depArray - Array of dependency items from TOML parsing
+ * @param source - Source type for the dependencies
+ * @returns Array of Items representing dependencies
+ */
+function parsePep621Dependencies(depArray: Item[], source: 'dependencies' | 'optional-dependencies'): Item[] {
+    const dependencies: Item[] = [];
+
+    for (const dep of depArray) {
+        if (typeof dep.value === 'string') {
+            const parsed = parsePep621DependencyString(dep.value, dep.start, dep.end);
+            if (parsed) {
+                const item = new Item();
+                item.key = parsed.name;
+                item.value = parsed.version || "";
+                item.start = dep.start;
+                item.end = dep.end;
+                // Store additional PEP 621 metadata
+                (item as any).isPep621 = true;
+                (item as any).originalText = dep.value;
+                (item as any).extras = parsed.extras;
+                (item as any).source = source;
+                dependencies.push(item);
+            }
+        }
+    }
+
+    return dependencies;
+}
+
+/**
+ * Parse a single PEP 621 dependency string
+ * @param depString - Dependency string like "requests>=2.28.0" or "package[extra]~=1.0"
+ * @param start - Start position in document
+ * @param end - End position in document
+ * @returns Parsed dependency information
+ */
+function parsePep621DependencyString(
+    depString: string,
+    _start: number,
+    _end: number
+): { name: string; version?: string; extras?: string[] } | null {
+    // Remove surrounding quotes and whitespace
+    const cleanString = depString.replace(/^["']|["']$/g, '').trim();
+
+    // Skip git/url dependencies for now
+    if (cleanString.startsWith('git+') || cleanString.startsWith('http')) {
+        return null;
+    }
+
+    // Extract package name, version constraint, and extras
+    const match = cleanString.match(RE_PEP621_DEPENDENCY);
+    if (!match) {
+        return null;
+    }
+
+    const packageWithExtras = match[1];
+    const versionPart = match[2]?.trim();
+
+    // Extract extras if present
+    const extrasMatch = packageWithExtras.match(RE_PEP621_EXTRAS);
+    const extras = extrasMatch ? extrasMatch[1].split(',').map(e => e.trim()) : [];
+    const packageName = packageWithExtras.replace(RE_PEP621_EXTRAS, '');
+
+    // Extract version constraint
+    let version: string | undefined;
+    if (versionPart) {
+        const versionMatch = versionPart.match(RE_PEP621_VERSION_CONSTRAINT);
+        if (versionMatch) {
+            // Include the operator with the version (e.g., ">=2.28.0")
+            version = versionMatch[1] + versionMatch[2];
+        } else {
+            // Handle cases like "package (>=1.0.0,<2.0.0)" - extract everything in parentheses
+            const parenMatch = versionPart.match(/\((.+)\)/);
+            if (parenMatch) {
+                version = parenMatch[1];
+            }
+        }
+    }
+
+    return {
+        name: packageName,
+        version: version,
+        extras: extras.length > 0 ? extras : undefined
+    };
+}
+
+/**
+ * Enhanced package filtering with better type safety and PyPI integration
+ * @param items - Parsed TOML items
+ * @param includeWorkspaceDeps - Whether to include workspace dependencies
+ * @returns Filtered and enhanced dependency items
+ */
+export function filterPackagesEnhanced(items: Item[], includeWorkspaceDeps: boolean = false): ParsedDependency[] {
+    const legacyItems = filterPackages(items);
+    const dependencies: ParsedDependency[] = [];
+
+    for (const item of legacyItems) {
+        // Skip workspace dependencies unless explicitly requested
+        if (!includeWorkspaceDeps && item.key.endsWith('.workspace')) {
+            continue;
+        }
+
+        const dependency = convertItemToParsedDependency(item);
+        if (dependency) {
+            dependencies.push(dependency);
+        }
+    }
+
+    return dependencies;
 }
