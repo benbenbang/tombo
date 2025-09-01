@@ -5,12 +5,26 @@ import { CompletionItem, CompletionItemKind, CompletionList, MarkdownString } fr
 import { sortText } from "../providers/autoCompletion";
 import Package from "./Package";
 import { TomboSettings } from './settings';
+import { PyPIService, PyPIServiceFactory } from '../api/services/pypi-service';
+import { PackageMetadata } from '../api/types/pypi';
+import { PyPIError, PackageNotFoundError } from '../core/errors/pypi-errors';
+import { ParsedDependency } from '../toml/parser';
 
 // Use require instead of import to avoid TypeScript error with NodeCache
 const NodeCache = require('node-cache');
 
 // Create a cache for PyPI responses
 const pypiCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 }); // Cache for 1 hour, check expiry every 10 mins
+
+/**
+ * Enhanced dependency result with richer metadata
+ */
+export interface EnhancedDependency {
+    dependency: ParsedDependency;
+    metadata: PackageMetadata | null;
+    error: PyPIError | null;
+    completionItems: CompletionItem[];
+}
 
 /**
  * Fetch package versions from PyPI for a list of package names or Package objects
@@ -166,5 +180,213 @@ function findPackageObject(packageName: string, dependencies: string[] | Package
     // Create a new Package object if not found
     const pkg = new Package();
     pkg.key = packageName;
+    return pkg;
+}
+
+/**
+ * Enhanced package fetcher that uses the modern PyPIService architecture
+ * Provides richer metadata and better error handling
+ */
+export async function fetchPackageMetadataEnhanced(
+    dependencies: ParsedDependency[],
+    settings?: TomboSettings
+): Promise<EnhancedDependency[]> {
+    const tomboSettings = settings || new TomboSettings();
+    const includePreReleases = tomboSettings.listPreReleases;
+    const indexUrl = tomboSettings.pypiIndexUrl;
+
+    // Create PyPI service instance
+    const pypiService = PyPIServiceFactory.createWithConfig({
+        baseUrl: indexUrl,
+        timeout: 10000,
+        retryAttempts: 2,
+        retryDelay: 1000
+    });
+
+    StatusBar.setText("Loading", `🔍 Fetching from ${indexUrl.replace(/^https?:\/\//, '')}`);
+
+    const results: EnhancedDependency[] = [];
+
+    // Process dependencies concurrently with controlled parallelism
+    const batchSize = 5; // Process 5 packages at a time
+    for (let i = 0; i < dependencies.length; i += batchSize) {
+        const batch = dependencies.slice(i, i + batchSize);
+        const batchPromises = batch.map(async (dependency) => {
+            return await processSingleDependency(dependency, pypiService, includePreReleases);
+        });
+
+        const batchResults = await Promise.allSettled(batchPromises);
+
+        // Process batch results
+        for (let j = 0; j < batchResults.length; j++) {
+            const result = batchResults[j];
+            if (result.status === 'fulfilled') {
+                results.push(result.value);
+            } else {
+                // Handle rejected promises
+                const dependency = batch[j];
+                const error = new PyPIError(
+                    'PROCESSING_ERROR',
+                    result.reason?.message || 'Unknown processing error',
+                    dependency.name,
+                    result.reason
+                );
+
+                results.push({
+                    dependency,
+                    metadata: null,
+                    error,
+                    completionItems: []
+                });
+            }
+        }
+
+        // Update progress
+        const progress = Math.min(i + batchSize, dependencies.length);
+        StatusBar.setText("Loading", `🔍 Processed ${progress}/${dependencies.length} packages`);
+    }
+
+    StatusBar.setText("Info", `✅ Processed ${dependencies.length} packages`);
+
+    return results;
+}
+
+/**
+ * Process a single dependency with the PyPI service
+ */
+async function processSingleDependency(
+    dependency: ParsedDependency,
+    pypiService: PyPIService,
+    includePreReleases: boolean
+): Promise<EnhancedDependency> {
+    try {
+        const metadata = await pypiService.getPackageMetadata(dependency.name, includePreReleases);
+        const completionItems = createEnhancedCompletionItems(dependency, metadata);
+
+        return {
+            dependency,
+            metadata,
+            error: null,
+            completionItems
+        };
+    } catch (error) {
+        let pypiError: PyPIError;
+
+        if (error instanceof PyPIError) {
+            pypiError = error;
+        } else {
+            pypiError = new PyPIError(
+                'FETCH_ERROR',
+                error instanceof Error ? error.message : 'Unknown error',
+                dependency.name,
+                error instanceof Error ? error : undefined
+            );
+        }
+
+        return {
+            dependency,
+            metadata: null,
+            error: pypiError,
+            completionItems: []
+        };
+    }
+}
+
+/**
+ * Create enhanced completion items with rich documentation
+ */
+function createEnhancedCompletionItems(
+    _dependency: ParsedDependency,
+    metadata: PackageMetadata
+): CompletionItem[] {
+    const completionItems: CompletionItem[] = [];
+
+    metadata.versions.forEach((version, index) => {
+        const completionItem = new CompletionItem(
+            version,
+            CompletionItemKind.Class
+        );
+
+        // Create rich documentation
+        const documentation = new MarkdownString();
+        documentation.isTrusted = true;
+
+        // Header
+        documentation.appendMarkdown(`## ${metadata.name} ${version}\n\n`);
+
+        // Summary
+        if (metadata.summary) {
+            documentation.appendMarkdown(`${metadata.summary}\n\n`);
+        }
+
+        // Version status
+        const isLatest = version === metadata.latestVersion;
+        const isYanked = metadata.yankedVersions.has(version);
+        const isPreRelease = metadata.preReleaseVersions.has(version);
+
+        if (isLatest) {
+            documentation.appendMarkdown(`**Latest Version** ✨\n\n`);
+        }
+
+        if (isYanked) {
+            documentation.appendMarkdown(`⚠️ **This version has been yanked**\n\n`);
+        }
+
+        if (isPreRelease) {
+            documentation.appendMarkdown(`🧪 **Pre-release Version**\n\n`);
+        }
+
+        // Python requirement
+        if (metadata.requiresPython) {
+            documentation.appendMarkdown(`**Requires Python:** ${metadata.requiresPython}\n\n`);
+        }
+
+        // Links
+        const releaseUrl = `https://pypi.org/project/${metadata.name}/${version}/`;
+        documentation.appendMarkdown(`[View on PyPI](${releaseUrl})`);
+
+        completionItem.documentation = documentation;
+        completionItem.preselect = index === 0; // Preselect latest version
+        completionItem.sortText = sortText(index);
+
+        // Add special indicators for problematic versions
+        if (isYanked) {
+            completionItem.tags = [1]; // CompletionItemTag.Deprecated
+        }
+
+        completionItems.push(completionItem);
+    });
+
+    return completionItems;
+}
+
+/**
+ * Compatibility function to convert enhanced dependencies to legacy format
+ * This allows gradual migration from the old system
+ */
+export function convertToLegacyDependencies(
+    enhancedDeps: EnhancedDependency[]
+): Dependency[] {
+    return enhancedDeps.map(enhanced => {
+        const legacy: Dependency = {
+            package: convertParsedToLegacyPackage(enhanced.dependency),
+            versions: enhanced.metadata?.versions || [],
+            error: enhanced.error?.message,
+            versionCompletionItems: new CompletionList(enhanced.completionItems, true)
+        };
+
+        return legacy;
+    });
+}
+
+/**
+ * Convert ParsedDependency to legacy Package format
+ */
+function convertParsedToLegacyPackage(dependency: ParsedDependency): Package {
+    const pkg = new Package();
+    pkg.key = dependency.name;
+    pkg.value = dependency.version;
+    pkg.start = dependency.startPosition;
+    pkg.end = dependency.endPosition;
     return pkg;
 }
