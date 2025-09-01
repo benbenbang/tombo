@@ -7,4 +7,4 @@ export default interface DecorationPreferences {
     compatibleDecoratorCss: DecorationInstanceRenderOptions;
     incompatibleDecoratorCss: DecorationInstanceRenderOptions;
     errorDecoratorCss: DecorationInstanceRenderOptions;
-};
+}

@@ -11,4 +11,4 @@ export default interface Dependency {
 
     versionCompletionItems?: CompletionList;
     featureCompletionItems?: Map<string, CompletionList>;
-};
+}
