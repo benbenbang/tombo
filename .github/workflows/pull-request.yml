@@ -1,0 +1,21 @@
+name: 'pull request workflow'
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - edited
+      - reopened
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    name: pre-commit checks
+    uses: benbenbang/tombo/.github/workflows/pre-commit.yml@workflows
+    secrets: inherit
