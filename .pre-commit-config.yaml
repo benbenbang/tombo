@@ -38,6 +38,6 @@ repos:
           - commit-msg
       - id: tsc-check
         name: TypeScript type check
-        entry: bash -c "npm install && npx tsc --noEmit"
+        entry: bash -c "[ ! -d node_modules ] && npm ci --silent || true; npx tsc --noEmit"
         language: system
         files: \.(ts|tsx)$
