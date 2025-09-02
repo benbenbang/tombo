@@ -5,6 +5,8 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "lib": [
+      "ES2015",
+      "ES2017",
       "ES2021",
       "ES2021.Promise",
       "DOM"
