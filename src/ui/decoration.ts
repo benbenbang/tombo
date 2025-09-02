@@ -16,7 +16,7 @@ import { status, ReplaceItem } from '../toml/commands';
 import { validRange } from 'semver';
 import DecorationPreferences from '../core/DecorationText';
 import Package from '../core/Package';
-import { PackageMetadata, VersionInfo } from '../api/types/pypi';
+import { PackageMetadata } from '../api/types/pypi';
 import { PyPIError } from '../core/errors/pypi-errors';
 import { ParsedDependency } from '../toml/parser';
 

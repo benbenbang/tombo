@@ -17,11 +17,11 @@ import {
 } from 'vscode';
 
 import { PyPIService } from '../api/services/pypi-service';
-import { PackageMetadata, VersionInfo } from '../api/types/pypi';
+import { PackageMetadata } from '../api/types/pypi';
 import { PyPIError, PackageNotFoundError } from '../core/errors/pypi-errors';
 import { ExtensionConfig } from '../core/config/extension-config';
 import { Logger } from '../core/logging/logger';
-import { parseDependenciesWithMetadata } from '../toml/parser';
+// Removed unused: parseDependenciesWithMetadata
 
 export class VersionCompletionProvider implements CompletionItemProvider {
   private readonly pypiService: PyPIService;

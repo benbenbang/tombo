@@ -1,6 +1,6 @@
 import { TextDocument } from 'vscode';
 import Item from '../core/Package';
-import { PackageMetadata, VersionInfo } from '../api/types/pypi';
+// Removed unused imports: PackageMetadata, VersionInfo
 import { PyPIService } from '../api/services/pypi-service';
 
 /**
