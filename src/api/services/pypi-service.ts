@@ -6,7 +6,7 @@
 import { PyPIPackageResponse, PackageMetadata, VersionInfo, PyPIClientConfig, CacheConfig, PyPIPackageInfo } from '../types/pypi';
 import { HttpClient } from '../clients/http-client';
 import { PackageCache } from '../cache/package-cache';
-import { PyPIError, PackageNotFoundError, ErrorFactory } from '../../core/errors/pypi-errors';
+import { ErrorFactory } from '../../core/errors/pypi-errors';
 
 export class PyPIService {
   private readonly httpClient: HttpClient;
@@ -49,7 +49,7 @@ export class PyPIService {
    * Get all available versions for a package
    */
   async getPackageVersions(packageName: string, includePreReleases = false): Promise<VersionInfo[]> {
-    const metadata = await this.getPackageMetadata(packageName, includePreReleases);
+    const _metadata = await this.getPackageMetadata(packageName, includePreReleases);
     const response = await this.fetchPackageData(packageName);
 
     return this.processVersionInfo(response, includePreReleases);

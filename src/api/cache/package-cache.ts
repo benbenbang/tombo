@@ -3,7 +3,7 @@
  * Implements LRU cache with TTL and size limits
  */
 
-import { CacheConfig, PackageMetadata, VersionInfo, PyPIPackageInfo } from '../types/pypi';
+import { CacheConfig } from '../types/pypi';
 
 interface CacheEntry<T> {
   data: T;

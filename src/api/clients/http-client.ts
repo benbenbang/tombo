@@ -5,7 +5,7 @@
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { PyPIClientConfig, RequestOptions } from '../types/pypi';
-import { ErrorFactory, PyPIError, TimeoutError } from '../../core/errors/pypi-errors';
+import { ErrorFactory, PyPIError } from '../../core/errors/pypi-errors';
 
 export class HttpClient {
   private readonly axiosInstance: AxiosInstance;
