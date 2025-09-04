@@ -1,0 +1,16 @@
+[project]
+name = "tombo"
+version = "1.0.0"
+description = "tombo - ease your dependencis version selection"
+readme = "README.md"
+requires-python = ">=3.12.11"
+dependencies = [
+    "mkdocs>=1.6.1",
+    "mkdocs-embed-external-markdown>=3.0.2",
+    "mkdocs-exclude>=1.0.2",
+    "mkdocs-material>=9.6.18",
+    "mkdocs-redirects>=1.2.2",
+    "mkdocs-simple-hooks>=0.1.5",
+    "mkdocstrings-python>=1.18.2",
+    "poetry==1.8.5",
+]

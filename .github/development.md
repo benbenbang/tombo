@@ -9,15 +9,15 @@ Tombo implements a **modern, type-safe TypeScript architecture** that eliminates
 ```
 src/
 ├── api/                    # 🌐 PyPI Integration Layer
-│   ├── types/             #    TypeScript definitions for PyPI API
-│   ├── clients/           #    HTTP client with retry & URL fixing
-│   ├── services/          #    Unified PyPI service (no duplicates!)
-│   └── cache/             #    Smart LRU cache with TTL
-├── core/                  # ⚙️ Core Infrastructure
-│   ├── errors/            #    Structured error hierarchy
-│   └── config/            #    Hot-reloadable configuration
-├── extension/             # 🔌 VS Code Integration
-└── providers/             # 📝 Language providers (completion, hover)
+│   ├── types/              #    TypeScript definitions for PyPI API
+│   ├── clients/            #    HTTP client with retry & URL fixing
+│   ├── services/           #    Unified PyPI service (no duplicates!)
+│   └── cache/              #    Smart LRU cache with TTL
+├── core/                   # ⚙️ Core Infrastructure
+│   ├── errors/             #    Structured error hierarchy
+│   └── config/             #    Hot-reloadable configuration
+├── extension/              # 🔌 VS Code Integration
+└── providers/              # 📝 Language providers (completion, hover)
 ```
 
 ### **✅ Issues Resolved**
@@ -63,8 +63,8 @@ src/
 
 ### Prerequisites
 
-- Node.js 14.x or higher
-- Python 3.8+ with nox
+- Node.js 20.x or higher
+- Python 3.10+ with nox (recommend to have 3.10+ as <3.10 is end-of-life)
 - VS Code for testing
 
 ### Quick Start
