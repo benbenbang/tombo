@@ -128,13 +128,18 @@ export class QuickActions implements CodeActionProvider {
         const packageName = match[1];
         const currentVersion = match[2];
 
-        // Calculate the range for the version part
-        const versionStart = lineText.indexOf(currentVersion);
+        // Calculate the range for the version part more accurately
+        // For patterns like package = "version" or package = { version = "version" }
+        // Find the quote that contains our version
+        const beforeVersion = match[0].substring(0, match[0].lastIndexOf(currentVersion));
+        const versionStart = match.index! + beforeVersion.length;
+        const versionEnd = versionStart + currentVersion.length;
+
         const versionRange = new Range(
           range.start.line,
           versionStart,
           range.start.line,
-          versionStart + currentVersion.length
+          versionEnd
         );
 
         return {
@@ -167,47 +172,64 @@ export class QuickActions implements CodeActionProvider {
         // Pattern for: "package>=1.0.0", "package~=1.0", "package==1.0.0"
         pattern: /^\s*["']([a-zA-Z0-9_-]+(?:\[[^\]]*\])?)([><=!~]+)([^"',]*?)["'],?\s*$/,
         type: 'version_constraint',
+        operatorGroup: 2,
         versionGroup: 3
       },
       {
         // Pattern for: "package (>=1.0.0,<2.0.0)", "package (==1.0.0)"
         pattern: /^\s*["']([a-zA-Z0-9_-]+(?:\[[^\]]*\])?)\s*\(([^)]+)\)["'],?\s*$/,
         type: 'parentheses_version',
+        operatorGroup: null,
         versionGroup: 2
       },
       {
         // Pattern for: "package", "package[extra]" (no version constraint)
         pattern: /^\s*["']([a-zA-Z0-9_-]+(?:\[[^\]]*\])?)["'],?\s*$/,
         type: 'no_version',
+        operatorGroup: null,
         versionGroup: null
       }
     ];
 
-    for (const { pattern, type, versionGroup } of pep621Patterns) {
+    for (const { pattern, type, operatorGroup, versionGroup } of pep621Patterns) {
       const match = lineText.match(pattern);
       if (match) {
         const packageWithExtras = match[1];
         const packageName = packageWithExtras.replace(/\[[^\]]*\]/, ''); // Remove extras
+        const operator = operatorGroup ? (match[operatorGroup] || '') : '';
         const currentVersion = versionGroup ? (match[versionGroup] || '') : '';
 
         let versionStart: number;
         let versionEnd: number;
 
-        if (versionGroup && currentVersion) {
-          // Find the exact position of the version constraint
-          if (type === 'parentheses_version') {
-            const parenStart = lineText.indexOf('(');
-            versionStart = parenStart + 1;
-            versionEnd = lineText.indexOf(')', parenStart);
+        if (type === 'parentheses_version') {
+          // For parentheses format: "package (>=1.0.0,<2.0.0)"
+          const parenStart = lineText.indexOf('(');
+          versionStart = parenStart + 1;
+          versionEnd = lineText.indexOf(')', parenStart);
+        } else if (type === 'version_constraint') {
+          // For version constraint format: "package>=1.0.0" or "package>="
+          // Find the position right after the operator
+          const quoteChar = lineText.includes('"') ? '"' : "'";
+          const packageStart = lineText.indexOf(quoteChar) + 1;
+          const operatorStart = packageStart + packageWithExtras.length;
+          const operatorEnd = operatorStart + operator.length;
+
+          // Version starts right after the operator
+          versionStart = operatorEnd;
+
+          // Version ends before the closing quote
+          const closingQuoteIndex = lineText.indexOf(quoteChar, operatorEnd);
+          if (closingQuoteIndex !== -1) {
+            versionEnd = closingQuoteIndex;
           } else {
-            // For version_constraint type
-            const versionStartInMatch = lineText.indexOf(currentVersion, lineText.indexOf(packageWithExtras));
-            versionStart = versionStartInMatch;
-            versionEnd = versionStart + currentVersion.length;
+            // If no closing quote, version goes to end of line
+            versionEnd = lineText.length;
           }
         } else {
           // For packages without version, place at end of package name inside quotes
-          const packageStart = lineText.indexOf(packageWithExtras);
+          const quoteChar = lineText.includes('"') ? '"' : "'";
+          const packageStart = lineText.indexOf(quoteChar) + 1;
           const packageEnd = packageStart + packageWithExtras.length;
           versionStart = packageEnd;
           versionEnd = packageEnd;
@@ -252,13 +274,21 @@ export class QuickActions implements CodeActionProvider {
       const operator = match[2];
       const currentVersion = match[3];
 
-      // Calculate the range for the version part
-      const versionStart = lineText.indexOf(currentVersion);
+      // Calculate the range for the version part more accurately
+      // Version starts right after the package name and operator
+      const packageEnd = match.index! + match[1].length;
+      const operatorEnd = packageEnd + match[2].length;
+      // Account for any whitespace after operator
+      const operatorMatch = lineText.substring(operatorEnd).match(/^\s*/);
+      const whitespaceLength = operatorMatch ? operatorMatch[0].length : 0;
+      const versionStart = operatorEnd + whitespaceLength;
+      const versionEnd = versionStart + match[3].length;
+
       const versionRange = new Range(
         range.start.line,
         versionStart,
         range.start.line,
-        versionStart + currentVersion.length
+        versionEnd
       );
 
       return {
@@ -316,7 +346,7 @@ export class QuickActions implements CodeActionProvider {
 
   /**
    * Format version for replacement based on the context (PEP 621 vs traditional TOML)
-   * ENHANCED: Better constraint operator preservation
+   * ENHANCED: Better constraint operator preservation and positioning
    */
   private formatVersionForReplacement(
     packageInfo: { name: string; currentVersion?: string; versionRange: Range; line: string; isToml: boolean },
@@ -324,20 +354,19 @@ export class QuickActions implements CodeActionProvider {
   ): string {
     // Check if this is a PEP 621 array format
     if (this.isPep621ArrayFormat(packageInfo.line)) {
-      // For PEP 621, determine the constraint operator to use
-      if (!packageInfo.currentVersion || packageInfo.currentVersion.trim() === '') {
-        // If no version currently, use compatible release constraint
-        return `~=${version}`;
+      // For PEP 621, we need to be careful about operators
+      const line = packageInfo.line;
+
+      // Check if there's already an operator in the line (e.g., "package>=")
+      const operatorMatch = line.match(/["']([a-zA-Z0-9_-]+(?:\[[^\]]*\])?)([><=!~]+)([^"']*?)["']/);
+
+      if (operatorMatch) {
+        // Operator exists in line, just return the version number
+        // The range should already be positioned after the operator
+        return version;
       } else {
-        // Preserve the existing constraint operator
-        const operatorMatch = packageInfo.currentVersion.match(/^([><=!~]+)/);
-        if (operatorMatch) {
-          const operator = operatorMatch[1];
-          return `${operator}${version}`;
-        } else {
-          // Fallback to compatible release if no operator found
-          return `~=${version}`;
-        }
+        // No operator in line, add operator + version (e.g., "package" → "package~=1.0.0")
+        return `~=${version}`;
       }
     }
 
@@ -412,18 +441,22 @@ export class QuickActions implements CodeActionProvider {
   ): CodeAction[] {
     const actions: CodeAction[] = [];
 
-    if (!packageInfo.currentVersion) {
-      return actions;
-    }
+    // Extract operator and version from the line directly
+    const line = packageInfo.line;
+    const operatorMatch = line.match(/["']([a-zA-Z0-9_-]+(?:\[[^\]]*\])?)([><=!~]+)([^"']*?)["']/);
 
-    // Extract current operator and version
-    const operatorMatch = packageInfo.currentVersion.match(/^([><=!~]+)(.*)/);
     if (!operatorMatch) {
+      // No operator in line, skip constraint changes
       return actions;
     }
 
-    const currentOperator = operatorMatch[1];
-    const versionNumber = operatorMatch[2];
+    const currentOperator = operatorMatch[2];
+    const versionNumber = operatorMatch[3];
+
+    // Only show constraint change actions if there's a version number
+    if (!versionNumber || versionNumber.trim() === '') {
+      return actions;
+    }
 
     // Define constraint change options
     const constraintOptions = [
@@ -441,7 +474,23 @@ export class QuickActions implements CodeActionProvider {
         );
 
         const edit = new WorkspaceEdit();
-        edit.replace(document.uri, packageInfo.versionRange, `${operator}${versionNumber}`);
+
+        // For constraint changes, we need to replace both operator and version
+        // Calculate the range from the start of the operator to the end of the version
+        const quoteChar = line.includes('"') ? '"' : "'";
+        const packageStart = line.indexOf(quoteChar) + 1;
+        const packageWithExtras = operatorMatch[1];
+        const operatorStart = packageStart + packageWithExtras.length;
+        const closingQuoteIndex = line.indexOf(quoteChar, operatorStart);
+
+        const operatorAndVersionRange = new Range(
+          packageInfo.versionRange.start.line,
+          operatorStart,
+          packageInfo.versionRange.start.line,
+          closingQuoteIndex !== -1 ? closingQuoteIndex : line.length
+        );
+
+        edit.replace(document.uri, operatorAndVersionRange, `${operator}${versionNumber}`);
         action.edit = edit;
 
         actions.push(action);
