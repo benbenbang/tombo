@@ -180,6 +180,80 @@ dependencies = [
 
 3. **Verify PyPI index**: Make sure you're using the correct PyPI server
 
+### Version Selection Workflow
+
+**Note**: Tombo is designed for **version research and selection**, not automatic insertion. The recommended workflow is:
+
+1. **Research**: Use Tombo to see available versions and compatibility
+2. **Select**: Choose the appropriate version constraint
+3. **Install**: Use `uv add package>=x.y.z` or `poetry add "package>=x.y.z"`
+
+```toml title="Recommended workflow"
+# 1. Start typing to see options
+dependencies = [
+    "requests>=",                       # ← See available versions via completion
+]
+
+# 2. Research versions via hover and completion dropdown
+# 3. Choose appropriate version (e.g., 2.31.0)
+# 4. Run: uv add "requests>=2.31.0"
+```
+
+This approach gives you full control over version selection while leveraging Tombo's intelligence for research.
+
+## Known Issues and Limitations
+
+### Format Support Levels
+
+**🟢 Fully Supported (Excellent Experience)**:
+
+- **PEP 621** (`[project]` section): Complete completion and hover support
+- **Poetry v1** (`[tool.poetry.dependencies]`): All features work perfectly
+- **Requirements.txt**: Full compatibility with all operators
+
+**🟡 Limited Support**:
+
+- **Poetry v2 Parentheses Format**: `"package (>=1.0,<2.0)"`
+
+  - ✅ Hover information works
+  - ⚠️ Completion may not trigger reliably
+  - **Workaround**: Use standard Poetry v1 format when possible
+
+**Examples**:
+```toml title="Support levels comparison"
+[tool.poetry.dependencies]
+requests = "^2.31.0"                   # 🟢 Excellent support
+pandas = "pandas (>=2.0,<3.0)"         # 🟡 Limited - hover works, completion unreliable
+```
+
+### Version Completion Positioning
+
+**Issue**: Quick fix actions may insert text at unexpected positions.
+
+**What Works Perfectly**:
+
+- ✅ **Completion Dropdown**: Selecting versions from the dropdown works correctly
+- ✅ **Hover Information**: Package info and version details work flawlessly
+- ✅ **Manual Typing**: Standard typing and editing works as expected
+
+**What Has Issues**:
+
+- ⚠️ **Quick Fix Actions**: Right-click context menu actions may position text incorrectly
+
+**Symptoms of Quick Fix Issues**:
+
+- Text appears before operators: `"package2.31.0>="`
+- Extra operators added: `"package~=2.31.0=="`
+
+**Recommended Usage**:
+
+1. **Use completion dropdown** - Select versions from the completion menu (works perfectly)
+2. **Use hover for research** - Get version info and compatibility details
+3. **Type manually when needed** - For precise control over formatting
+4. **Avoid quick fix actions** - Until positioning is improved in a future update
+
+**Status**: Quick fix positioning will be improved in a future update. Core completion and hover functionality work excellently.
+
 ## File Format Issues
 
 ### PEP 621 Not Working
@@ -212,25 +286,31 @@ dependencies = [
 
 ### Poetry Format Issues
 
-**Problem**: Tombo not working in Poetry `pyproject.toml`.
+**Problem**: Inconsistent behavior with Poetry formats.
 
-**Solutions**:
+**Solutions by Format**:
 
-1. **Check Poetry section**:
+1. **Poetry v1 (Recommended)**:
 
-```toml title="Poetry v1 format"
+```toml title="Poetry v1 - Excellent support"
 [tool.poetry.dependencies]             # ← Exact section name required
 python = "^3.8"
-requests = "^2.31.0"                   # ← Tombo works here
+requests = "^2.31.0"                   # ✅ Full completion + hover support
+numpy = "~1.24.0"                      # ✅ All operators work perfectly
 ```
 
-2. **Poetry v2 parentheses syntax**:
+2. **Poetry v2 (Limited Support)**:
 
-```toml title="Poetry v2 known limitations"
+```toml title="Poetry v2 - Use with caution"
 [tool.poetry.dependencies]
-requests = "^2.31.0"                   # ✅ Works perfectly
-pandas = "pandas (>=2.0,<3.0)"        # ⚠️ Limited support - type operators manually
+requests = "^2.31.0"                   # ✅ Standard syntax works perfectly
+pandas = "pandas (>=2.0,<3.0)"         # ⚠️ Parentheses format has limitations:
+                                       #     - Hover works ✅
+                                       #     - Completion unreliable ⚠️
+                                       #     - Manual typing recommended
 ```
+
+**Recommendation**: Use Poetry v1 syntax for the best Tombo experience. Poetry v2 parentheses format is supported but may require more manual typing.
 
 ### Requirements.txt Issues
 
@@ -247,9 +327,9 @@ pandas = "pandas (>=2.0,<3.0)"        # ⚠️ Limited support - type operators 
 2. **Verify line format**:
 
 ```txt title="Supported requirements.txt syntax"
-requests>=2.31.0                       # ✅ Basic constraint
-numpy==1.24.3                          # ✅ Exact version
-pandas~=2.0.0                          # ✅ Compatible release
+requests>=2.31.0                        # ✅ Basic constraint
+numpy==1.24.3                           # ✅ Exact version
+pandas~=2.0.0                           # ✅ Compatible release
 # Comments are ignored                  # ✅ Comments OK
 -e .                                    # ⚠️ Editable installs not supported
 -r other-requirements.txt               # ⚠️ File references not supported

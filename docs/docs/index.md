@@ -115,8 +115,10 @@ See Tombo in action - the perfect complement to uv/poetry for version selection:
 1. **The Problem**: `uv add apache-airflow==3.0.5` fails (yanked version)
 2. **The Solution**: Open VS Code with Tombo
 3. **Version Intelligence**: Type `apache-airflow==` → see all available versions
-4. **Smart Selection**: Choose 3.0.6 (working version)
+4. **Smart Selection**: Choose 3.0.6 (working version) → then `uv add apache-airflow==3.0.6`
 5. **Rich Information**: Hover to understand why 3.0.5 was yanked
+
+**Perfect Workflow**: Tombo helps you research and select the right version constraints → uv/poetry handles installation and lock files.
 
 ## Getting Started
 
@@ -124,6 +126,13 @@ Ready to supercharge your Python development? Install Tombo in just a few clicks
 
 [Get Started Now :material-download:](getting-started/installation.md){ .md-button .md-button--primary }
 [View Examples :material-code-braces:](examples/pep621.md){ .md-button }
+
+!!! info "Format Support & Usage Notes"
+    **Format Support**: PEP 621 and Poetry v1 work excellently. Poetry v2 has some limitations.
+    **Core Features**: Completion dropdown and hover information work perfectly for version research.
+    **Quick Fixes**: Right-click actions have some positioning issues - use dropdown selection for best results.
+
+    **→ [See detailed support levels and workarounds](troubleshooting/common-issues.md#known-issues-and-limitations)**
 
 ---
 
