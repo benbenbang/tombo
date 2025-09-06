@@ -4,6 +4,7 @@
 
 Tombo revolutionizes Python dependency management by bringing rich PyPI integration directly to your editor. Get instant version completion, hover information, and smart caching - all while supporting modern Python packaging standards.
 
+
 <div class="grid cards" markdown>
 
 -   :fontawesome-solid-rocket:{ .lg .middle } __Ready in Seconds__
@@ -86,27 +87,36 @@ Tombo revolutionizes Python dependency management by bringing rich PyPI integrat
 
 ## Key Features
 
-**🎯 Rich Hover Cards**
+**Rich Hover Cards**
 :   Hover over any package → see versions, Python compatibility, descriptions, and PyPI links
 
 **⚡ Version Completion**
 :   Type version constraints → get intelligent suggestions with compatibility info
 
-**🔄 Smart Caching**
+**Smart Caching**
 :   90% API call reduction with LRU+TTL caching - works offline after first lookup
 
-**📦 Universal Format Support**
+**Universal Format Support**
 :   PEP 621, Poetry v1/v2, requirements.txt - covers all Python packaging standards
 
-**🛡️ Privacy Focused**
+**Privacy Focused**
 :   MIT licensed, no telemetry, no accounts - completely free and open source
 
 ## Quick Demo
 
-1. **Open any Python project** with `pyproject.toml` or `requirements.txt`
-2. **Hover over a package name** → Rich metadata appears instantly
-3. **Start typing version constraints** → Get intelligent completion
-4. **Click PyPI links** → Jump to documentation without leaving VS Code
+See Tombo in action - the perfect complement to uv/poetry for version selection:
+
+<video controls width="100%">
+  <source src="https://d.pr/v/R4zkde.mp4" type="video/mp4">
+  [🎥 Watch Demo](https://d.pr/v/R4zkde)
+</video>
+
+**What you see:**
+1. **The Problem**: `uv add apache-airflow==3.0.5` fails (yanked version)
+2. **The Solution**: Open VS Code with Tombo
+3. **Version Intelligence**: Type `apache-airflow==` → see all available versions
+4. **Smart Selection**: Choose 3.0.6 (working version)
+5. **Rich Information**: Hover to understand why 3.0.5 was yanked
 
 ## Getting Started
 
