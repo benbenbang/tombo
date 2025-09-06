@@ -226,33 +226,6 @@ requests = "^2.31.0"                   # 🟢 Excellent support
 pandas = "pandas (>=2.0,<3.0)"         # 🟡 Limited - hover works, completion unreliable
 ```
 
-### Version Completion Positioning
-
-**Issue**: Quick fix actions may insert text at unexpected positions.
-
-**What Works Perfectly**:
-
-- ✅ **Completion Dropdown**: Selecting versions from the dropdown works correctly
-- ✅ **Hover Information**: Package info and version details work flawlessly
-- ✅ **Manual Typing**: Standard typing and editing works as expected
-
-**What Has Issues**:
-
-- ⚠️ **Quick Fix Actions**: Right-click context menu actions may position text incorrectly
-
-**Symptoms of Quick Fix Issues**:
-
-- Text appears before operators: `"package2.31.0>="`
-- Extra operators added: `"package~=2.31.0=="`
-
-**Recommended Usage**:
-
-1. **Use completion dropdown** - Select versions from the completion menu (works perfectly)
-2. **Use hover for research** - Get version info and compatibility details
-3. **Type manually when needed** - For precise control over formatting
-4. **Avoid quick fix actions** - Until positioning is improved in a future update
-
-**Status**: Quick fix positioning will be improved in a future update. Core completion and hover functionality work excellently.
 
 ## File Format Issues
 
