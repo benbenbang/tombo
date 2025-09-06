@@ -4,15 +4,15 @@ Tombo brings powerful Python package management capabilities directly to VS Code
 
 ## Core Features
 
-### 🎯 Rich Hover Information
+### Rich Hover Information
 
 Get comprehensive package details without leaving your editor:
 
-- **📦 Package description** - What the package does
-- **🏷️ Latest version** - Current stable release
-- **🐍 Python compatibility** - Supported Python versions
-- **📅 Version history** - Recent releases with dates
-- **🔗 Quick links** - Direct access to PyPI, docs, and source code
+- **Package description** - What the package does
+- **Latest version** - Current stable release
+- **Python compatibility** - Supported Python versions
+- **Version history** - Recent releases with dates
+- **Quick links** - Direct access to PyPI, docs, and source code
 - **⚠️ Deprecation warnings** - Know if packages are deprecated
 
 **Example:**
@@ -35,7 +35,7 @@ HTTP library for Python
 🔗 PyPI | Documentation | GitHub
 ```
 
-### ⚡ Intelligent Version Completion
+### Intelligent Version Completion
 
 Smart version suggestions as you type:
 
@@ -62,7 +62,7 @@ dependencies = [
 1.23.5    ❌ (Yanked)
 ```
 
-### 🔄 Smart Caching System
+### Smart Caching System
 
 Optimized performance with intelligent caching:
 
@@ -79,7 +79,7 @@ Optimized performance with intelligent caching:
 - **Cached hover**: ~5-10ms (instant)
 - **Cache hit rate**: ~95% in typical usage
 
-### 📦 Universal Format Support
+### Universal Format Support
 
 Works with all Python packaging standards:
 
@@ -123,7 +123,7 @@ Works with all Python packaging standards:
 
 ## Advanced Features
 
-### 🛡️ Error Prevention
+### Error Prevention
 
 Catch common issues before they happen:
 
@@ -132,7 +132,7 @@ Catch common issues before they happen:
 - **Deprecated package detection** - Alerts for deprecated packages
 - **Yanked version warnings** - Prevents using withdrawn releases
 
-### 🎨 Visual Indicators
+### Visual Indicators
 
 Clear visual feedback in your editor:
 
@@ -142,7 +142,7 @@ Clear visual feedback in your editor:
 - **⚠️ Deprecation warnings** - Alerts for deprecated packages
 - **📍 Status bar integration** - Current operation status
 
-### 🔍 Quick Actions
+### Quick Actions
 
 Right-click context menu actions:
 
@@ -152,7 +152,7 @@ Right-click context menu actions:
 - **View on PyPI** - Open package page in browser
 - **Copy version** - Copy version strings to clipboard
 
-### ⌨️ Keyboard Shortcuts
+### Keyboard Shortcuts
 
 Efficient keyboard-driven workflow:
 
@@ -228,16 +228,16 @@ Tombo understands these dependency sections:
 
 ### Privacy First Design
 
-- **🔒 Zero telemetry** - No usage tracking
-- **🏠 Local processing** - Data stays on your machine
-- **🌐 Optional networking** - Only for package lookups
-- **🔑 No accounts required** - Works without registration
+- **Zero telemetry** - No usage tracking
+- **Local processing** - Data stays on your machine
+- **Optional networking** - Only for package lookups
+- **No accounts required** - Works without registration
 
 ### Security Features
 
-- **✅ HTTPS only** - Secure PyPI connections
-- **🛡️ Input validation** - Prevents malicious input
-- **🔍 Source verification** - Validates package data
+- **HTTPS only** - Secure PyPI connections
+- **Input validation** - Prevents malicious input
+- **Source verification** - Validates package data
 - **⚡ Minimal permissions** - Least privilege principle
 
 ## Extensibility
