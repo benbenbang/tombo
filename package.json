@@ -173,6 +173,7 @@
     "theme": "dark"
   },
   "homepage": "https://github.com/benbenbang/tombo",
+  "icon": "assets/tombo.png",
   "keywords": [
     "python",
     "pypi",
@@ -210,5 +211,5 @@
     "watch": "webpack --watch",
     "watch-tests": "tsc -p . -w --outDir out"
   },
-  "version": "1.0.0"
+  "version": "1.0.1"
 }
