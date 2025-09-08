@@ -211,5 +211,5 @@
     "watch": "webpack --watch",
     "watch-tests": "tsc -p . -w --outDir out"
   },
-  "version": "1.0.1"
+  "version": "1.0.0"
 }
